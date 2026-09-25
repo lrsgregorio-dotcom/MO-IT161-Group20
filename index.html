@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Buddy</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Header: logo and app name -->
+  <header class="navbar">
+    <nav>
+      <div class="logo">
+        <span class="logo-icon">💰</span>
+        <h1>Budget Buddy</h1>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#dashboard">Dashboard</a></li>
+        <li><a href="#add-transaction">Add Transaction</a></li>
+        <li><a href="#subscriptions">Subscriptions</a></li>
+        <li><a href="#history">History</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- Dashboard: shows totals and the budget health indicator -->
+    <section id="dashboard" class="dashboard">
+      <h2 class="title">Your Budget at a Glance</h2>
+
+      <div class="summary-cards">
+        <div class="card">
+          <p class="card-label">Total Income</p>
+          <p class="card-value income-color" id="totalIncome">₱0.00</p>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Total Expenses</p>
+          <p class="card-value expense-color" id="totalExpenses">₱0.00</p>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Current Balance</p>
+          <p class="card-value" id="totalBalance">₱0.00</p>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Monthly Subscriptions</p>
+          <p class="card-value" id="totalSubscriptions">₱0.00</p>
+        </div>
+      </div>
+
+      <!-- Budget health badge changes color depending on balance -->
+      <div class="health-box">
+        <span>Budget Health:</span>
+        <span id="healthBadge" class="badge badge-good">Good</span>
+      </div>
+    </section>
+
+    <!-- Form to add income or expense transactions -->
+    <section id="add-transaction" class="form-section">
+      <h2 class="title">Add a Transaction</h2>
+
+      <form id="transactionForm">
+        <div class="form-row">
+          <label for="transactionType">Type</label>
+          <select id="transactionType" required>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="transactionCategory">Category</label>
+          <input type="text" id="transactionCategory" placeholder="e.g. Food, Allowance, Transport" required>
+        </div>
+
+        <div class="form-row">
+          <label for="transactionAmount">Amount (₱)</label>
+          <input type="number" id="transactionAmount" min="0.01" step="0.01" placeholder="0.00" required>
+        </div>
+
+        <div class="form-row">
+          <label for="transactionDate">Date</label>
+          <input type="date" id="transactionDate" required>
+        </div>
+
+        <div class="form-row">
+          <label for="transactionNote">Note (optional)</label>
+          <input type="text" id="transactionNote" placeholder="Short note">
+        </div>
+
+        <button type="submit" class="btn-primary">Add Transaction</button>
+      </form>
+    </section>
+
+    <!-- Form to add a recurring subscription -->
+    <section id="subscriptions" class="form-section">
+      <h2 class="title">Recurring Subscriptions</h2>
+
+      <form id="subscriptionForm">
+        <div class="form-row">
+          <label for="subscriptionName">Subscription Name</label>
+          <input type="text" id="subscriptionName" placeholder="e.g. Netflix, Spotify" required>
+        </div>
+
+        <div class="form-row">
+          <label for="subscriptionAmount">Amount (₱)</label>
+          <input type="number" id="subscriptionAmount" min="0.01" step="0.01" placeholder="0.00" required>
+        </div>
+
+        <div class="form-row">
+          <label for="subscriptionCycle">Billing Cycle</label>
+          <select id="subscriptionCycle" required>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary">Add Subscription</button>
+      </form>
+
+      <!-- List of subscriptions gets filled in by JavaScript -->
+      <ul id="subscriptionList" class="item-list"></ul>
+    </section>
+
+    <!-- Transaction history with a filter dropdown -->
+    <section id="history" class="form-section">
+      <div class="history-header">
+        <h2 class="title">Transaction History</h2>
+
+        <select id="filterType">
+          <option value="all">All</option>
+          <option value="income">Income Only</option>
+          <option value="expense">Expenses Only</option>
+        </select>
+      </div>
+
+      <!-- List of transactions gets filled in by JavaScript -->
+      <ul id="transactionList" class="item-list"></ul>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Budget Buddy &mdash; a simple personal finance tracker built with HTML, CSS &amp; JavaScript.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
