@@ -86,10 +86,10 @@
         <h1>Budget Buddy</h1>
       </div>
       <ul class="nav-links">
-        <li><a href="#dashboard">Dashboard</a></li>
-        <li><a href="#add-transaction">Add Transaction</a></li>
-        <li><a href="#subscriptions">Subscriptions</a></li>
-        <li><a href="#history">History</a></li>
+        <li><a href="#dashboard" data-page-link="dashboard">Dashboard</a></li>
+        <li><a href="#add-transaction" data-page-link="add-transaction">Add Transaction</a></li>
+        <li><a href="#subscriptions" data-page-link="subscriptions">Subscriptions</a></li>
+        <li><a href="#history" data-page-link="history">History</a></li>
       </ul>
       <div class="account-actions">
         <span id="signedInUser" class="signed-in-user"></span>
@@ -98,11 +98,15 @@
     </nav>
   </header>
 
-  <main>
+  <main id="appMain" class="app-main">
 
     <!-- Dashboard: shows totals and the budget health indicator -->
-    <section id="dashboard" class="dashboard">
-      <h2 class="title">Your Budget at a Glance</h2>
+    <section id="dashboard" class="dashboard app-page" aria-labelledby="dashboardTitle">
+      <div class="page-heading">
+        <p class="page-eyebrow">Overview</p>
+        <h2 class="title" id="dashboardTitle">Your Budget at a Glance</h2>
+        <p class="page-description">See your income, spending, recurring costs, and remaining balance together. Totals update whenever you add or remove an entry.</p>
+      </div>
 
       <div class="summary-cards">
         <div class="card">
@@ -131,11 +135,16 @@
         <span>Budget Health:</span>
         <span id="healthBadge" class="badge badge-good">Good</span>
       </div>
+      <p class="health-explainer">Your balance is income minus expenses and monthly subscription costs. Yearly subscriptions are divided by 12. A positive balance above 20% of income is Good; below 20% is Warning; a negative balance is Over Budget.</p>
     </section>
 
     <!-- Form to add income or expense transactions -->
-    <section id="add-transaction" class="form-section">
-      <h2 class="title">Add a Transaction</h2>
+    <section id="add-transaction" class="form-section app-page" aria-labelledby="transactionPageTitle" hidden>
+      <div class="page-heading">
+        <p class="page-eyebrow">Money in and out</p>
+        <h2 class="title" id="transactionPageTitle">Add a Transaction</h2>
+        <p class="page-description">Record income or an expense to keep your dashboard totals and transaction history current. Choose a type, enter its category, amount, and date, then add an optional note.</p>
+      </div>
 
       <form id="transactionForm">
         <div class="form-row">
@@ -171,8 +180,12 @@
     </section>
 
     <!-- Form to add a recurring subscription -->
-    <section id="subscriptions" class="form-section">
-      <h2 class="title">Recurring Subscriptions</h2>
+    <section id="subscriptions" class="form-section app-page" aria-labelledby="subscriptionsTitle" hidden>
+      <div class="page-heading">
+        <p class="page-eyebrow">Regular commitments</p>
+        <h2 class="title" id="subscriptionsTitle">Recurring Subscriptions</h2>
+        <p class="page-description">Track services and other repeating costs. Enter the amount and billing cycle; yearly charges are converted to a monthly estimate for your budget. Use Delete to remove a subscription.</p>
+      </div>
 
       <form id="subscriptionForm">
         <div class="form-row">
@@ -201,10 +214,13 @@
     </section>
 
     <!-- Transaction history with a filter dropdown -->
-    <section id="history" class="form-section">
+    <section id="history" class="form-section app-page" aria-labelledby="historyTitle" hidden>
+      <div class="page-heading">
+        <p class="page-eyebrow">Your activity</p>
+        <h2 class="title" id="historyTitle">Transaction History</h2>
+        <p class="page-description">Review the income and expenses you have recorded. Filter the list to show everything, income only, or expenses only; delete an entry to remove it from your totals.</p>
+      </div>
       <div class="history-header">
-        <h2 class="title">Transaction History</h2>
-
         <select id="filterType">
           <option value="all">All</option>
           <option value="income">Income Only</option>

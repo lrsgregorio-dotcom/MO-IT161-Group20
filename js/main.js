@@ -17,11 +17,42 @@ const signInTab = document.getElementById("signInTab");
 const signUpTab = document.getElementById("signUpTab");
 const signedInUser = document.getElementById("signedInUser");
 const prototypeSessionKey = "budgetBuddyPrototypeUser";
+const pageLinks = document.querySelectorAll("[data-page-link]");
+const appPages = document.querySelectorAll(".app-page");
+
+function showPage(pageId) {
+  const pageExists = Array.from(appPages).some(function (page) {
+    return page.id === pageId;
+  });
+  const activePageId = pageExists ? pageId : "dashboard";
+
+  appPages.forEach(function (page) {
+    page.hidden = page.id !== activePageId;
+  });
+
+  pageLinks.forEach(function (link) {
+    const isActive = link.getAttribute("data-page-link") === activePageId;
+    link.classList.toggle("is-active", isActive);
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  });
+}
+
+function syncPageFromHash() {
+  showPage(window.location.hash.slice(1) || "dashboard");
+}
+
+window.addEventListener("hashchange", syncPageFromHash);
+syncPageFromHash();
 
 function showApp(userName) {
   signedInUser.textContent = userName;
   authGate.hidden = true;
   appShell.hidden = false;
+  syncPageFromHash();
 }
 
 function setAuthMode(mode) {

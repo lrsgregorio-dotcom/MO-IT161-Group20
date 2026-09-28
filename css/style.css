@@ -456,24 +456,65 @@ body {
   text-decoration: underline;
 }
 
+.nav-links a.is-active {
+  color: #d5e6a5;
+  font-weight: 700;
+}
+
 /* ---------- Main sections ---------- */
-main {
+.app-main {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 34px 20px 20px;
 }
 
 .title {
-  margin-bottom: 15px;
-  color: #1f3864;
+  margin-bottom: 8px;
+  color: #173b38;
 }
 
-section {
+.app-page {
   background-color: #ffffff;
   border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 25px;
+  padding: 28px;
+  margin-bottom: 28px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-heading {
+  max-width: 700px;
+  margin-bottom: 25px;
+}
+
+.page-eyebrow {
+  margin-bottom: 7px;
+  color: #74864c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.page-heading .title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.page-description,
+.health-explainer {
+  max-width: 680px;
+  color: #68716a;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.health-explainer {
+  margin-top: 17px;
+  padding: 13px 15px;
+  border-left: 3px solid #a8bd70;
+  background: #f4f6ef;
+  font-size: 13px;
 }
 
 /* ---------- Dashboard summary cards ---------- */
@@ -581,7 +622,7 @@ section {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 0;
 }
 
 .history-header select {
@@ -647,4 +688,23 @@ footer {
   padding: 15px;
   color: #666;
   font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .app-main {
+    padding: 22px 14px 14px;
+  }
+
+  .app-page {
+    padding: 20px 17px;
+  }
+
+  .page-heading .title {
+    font-size: 26px;
+  }
+
+  .page-description,
+  .health-explainer {
+    font-size: 13px;
+  }
 }
