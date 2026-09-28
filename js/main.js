@@ -6,6 +6,7 @@
 // ---- Load saved data from localStorage, or start with empty lists ----
 let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 let subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
+let categoryBudgets = JSON.parse(localStorage.getItem("categoryBudgets")) || [];
 
 const authGate = document.getElementById("authGate");
 const appShell = document.getElementById("appShell");
@@ -84,6 +85,9 @@ signInForm.addEventListener("submit", function (event) {
   const identifier = document.getElementById("signInEmail").value.trim();
   localStorage.setItem(prototypeSessionKey, identifier);
   showApp(identifier);
+  updateNotificationControl();
+  renderRenewalReminders();
+  checkRenewalNotifications();
 });
 
 signUpForm.addEventListener("submit", function (event) {
@@ -91,6 +95,9 @@ signUpForm.addEventListener("submit", function (event) {
   const name = document.getElementById("signUpName").value.trim();
   localStorage.setItem(prototypeSessionKey, name);
   showApp(name);
+  updateNotificationControl();
+  renderRenewalReminders();
+  checkRenewalNotifications();
 });
 
 document.getElementById("signOutButton").addEventListener("click", function () {
@@ -114,6 +121,10 @@ const filterType = document.getElementById("filterType");
 
 const subscriptionForm = document.getElementById("subscriptionForm");
 const subscriptionList = document.getElementById("subscriptionList");
+const renewalReminderList = document.getElementById("renewalReminderList");
+const renewalReminderEmpty = document.getElementById("renewalReminderEmpty");
+const notificationButton = document.getElementById("notificationButton");
+const notificationStatus = document.getElementById("notificationStatus");
 
 const totalIncomeEl = document.getElementById("totalIncome");
 const totalExpensesEl = document.getElementById("totalExpenses");
@@ -122,6 +133,10 @@ const totalSubscriptionsEl = document.getElementById("totalSubscriptions");
 const healthBadge = document.getElementById("healthBadge");
 const spendingChart = document.getElementById("spendingChart");
 const spendingChartEmpty = document.getElementById("spendingChartEmpty");
+const categoryBudgetForm = document.getElementById("categoryBudgetForm");
+const categoryBudgetList = document.getElementById("categoryBudgetList");
+const categoryBudgetEmpty = document.getElementById("categoryBudgetEmpty");
+const budgetMonthLabel = document.getElementById("budgetMonthLabel");
 
 // ===================================================
 // SAVE TO LOCAL STORAGE
@@ -132,6 +147,10 @@ function saveTransactions() {
 
 function saveSubscriptions() {
   localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+}
+
+function saveCategoryBudgets() {
+  localStorage.setItem("categoryBudgets", JSON.stringify(categoryBudgets));
 }
 
 // ===================================================
@@ -178,9 +197,11 @@ subscriptionForm.addEventListener("submit", function (event) {
   const name = document.getElementById("subscriptionName").value.trim();
   const amount = parseFloat(document.getElementById("subscriptionAmount").value);
   const cycle = document.getElementById("subscriptionCycle").value;
+  const renewalDate = document.getElementById("subscriptionRenewalDate").value;
+  const reminderDays = Number(document.getElementById("subscriptionReminderDays").value);
 
-  if (!name || !amount || amount <= 0) {
-    alert("Please fill out subscription name and amount correctly.");
+  if (!name || !amount || amount <= 0 || !renewalDate) {
+    alert("Please enter a subscription name, a valid amount, and the next renewal date.");
     return;
   }
 
@@ -189,6 +210,8 @@ subscriptionForm.addEventListener("submit", function (event) {
     name: name,
     amount: amount,
     cycle: cycle,
+    renewalDate: renewalDate,
+    reminderDays: reminderDays,
   };
 
   subscriptions.push(newSubscription);
@@ -196,7 +219,46 @@ subscriptionForm.addEventListener("submit", function (event) {
 
   subscriptionForm.reset();
   renderSubscriptions();
+  renderRenewalReminders();
+  checkRenewalNotifications();
   updateSummary();
+});
+
+notificationButton.addEventListener("click", function () {
+  if (!notificationsAvailable()) return;
+
+  window.Notification.requestPermission().then(function () {
+    updateNotificationControl();
+    checkRenewalNotifications();
+  });
+});
+
+categoryBudgetForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const category = document.getElementById("budgetCategory").value.trim();
+  const limit = parseFloat(document.getElementById("budgetLimit").value);
+
+  if (!category || !limit || limit <= 0) {
+    alert("Please enter a category and a monthly limit greater than zero.");
+    return;
+  }
+
+  const categoryKey = category.toLocaleLowerCase();
+  const existingBudget = categoryBudgets.find(function (budget) {
+    return budget.category.toLocaleLowerCase() === categoryKey;
+  });
+
+  if (existingBudget) {
+    existingBudget.category = category;
+    existingBudget.limit = limit;
+  } else {
+    categoryBudgets.push({ category: category, limit: limit });
+  }
+
+  saveCategoryBudgets();
+  categoryBudgetForm.reset();
+  renderCategoryBudgets();
 });
 
 // ===================================================
@@ -257,37 +319,257 @@ function renderTransactions() {
 // RENDER SUBSCRIPTIONS
 // ===================================================
 function renderSubscriptions() {
-  subscriptionList.innerHTML = "";
+  subscriptionList.replaceChildren();
 
   subscriptions.forEach(function (sub) {
     const li = document.createElement("li");
+    li.className = "subscription-item";
 
-    li.innerHTML = `
-      <div class="item-info">
-        <span class="item-title">${sub.name}</span>
-        <span class="item-sub">${sub.cycle === "monthly" ? "Billed monthly" : "Billed yearly"}</span>
-      </div>
-      <div>
-        <span class="item-amount expense-color">₱${sub.amount.toFixed(2)}</span>
-        <button class="delete-btn" data-id="${sub.id}">Delete</button>
-      </div>
-    `;
+    const row = document.createElement("div");
+    row.className = "subscription-row";
 
-    subscriptionList.appendChild(li);
-  });
+    const info = document.createElement("div");
+    info.className = "item-info";
 
-  document.querySelectorAll("#subscriptionList .delete-btn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      const idToDelete = Number(btn.getAttribute("data-id"));
-      subscriptions = subscriptions.filter(function (sub) {
-        return sub.id !== idToDelete;
+    const name = document.createElement("span");
+    name.className = "item-title";
+    name.textContent = sub.name;
+
+    const cycle = document.createElement("span");
+    cycle.className = "item-sub";
+    cycle.textContent = sub.cycle === "monthly" ? "Billed monthly" : "Billed yearly";
+
+    const renewal = document.createElement("span");
+    renewal.className = "item-sub renewal-summary";
+    renewal.textContent = sub.renewalDate
+      ? "Next renewal " + formatRenewalDate(sub.renewalDate) + " · Remind " + Number(sub.reminderDays || 3) + " days before"
+      : "Add a renewal date to enable reminders.";
+
+    info.append(name, cycle, renewal);
+
+    const actions = document.createElement("div");
+    actions.className = "subscription-actions";
+
+    const amount = document.createElement("span");
+    amount.className = "item-amount expense-color";
+    amount.textContent = "₱" + Number(sub.amount).toFixed(2);
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "reminder-edit-button";
+    editButton.textContent = sub.renewalDate ? "Edit reminder" : "Set reminder";
+    editButton.setAttribute("aria-expanded", String(!sub.renewalDate));
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-btn";
+    deleteButton.textContent = "Delete";
+
+    actions.append(amount, editButton, deleteButton);
+    row.append(info, actions);
+
+    const editor = document.createElement("form");
+    editor.className = "renewal-editor";
+    editor.hidden = Boolean(sub.renewalDate);
+
+    const dateField = document.createElement("div");
+    dateField.className = "renewal-editor-field";
+    const dateLabel = document.createElement("label");
+    dateLabel.textContent = "Next renewal date";
+    const dateInput = document.createElement("input");
+    dateInput.type = "date";
+    dateInput.value = sub.renewalDate || "";
+    dateInput.required = true;
+    dateLabel.appendChild(dateInput);
+    dateField.appendChild(dateLabel);
+
+    const leadField = document.createElement("div");
+    leadField.className = "renewal-editor-field";
+    const leadLabel = document.createElement("label");
+    leadLabel.textContent = "Remind me before";
+    const leadSelect = document.createElement("select");
+    [1, 3, 7].forEach(function (days) {
+      const option = document.createElement("option");
+      option.value = String(days);
+      option.textContent = days + (days === 1 ? " day" : " days");
+      leadSelect.appendChild(option);
+    });
+    leadSelect.value = String(sub.reminderDays || 3);
+    leadLabel.appendChild(leadSelect);
+    leadField.appendChild(leadLabel);
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "submit";
+    saveButton.className = "btn-primary";
+    saveButton.textContent = "Save reminder";
+
+    editor.append(dateField, leadField, saveButton);
+    editor.addEventListener("submit", function (event) {
+      event.preventDefault();
+      sub.renewalDate = dateInput.value;
+      sub.reminderDays = Number(leadSelect.value);
+      saveSubscriptions();
+      renderSubscriptions();
+      renderRenewalReminders();
+      checkRenewalNotifications();
+    });
+
+    editButton.addEventListener("click", function () {
+      editor.hidden = !editor.hidden;
+      editButton.setAttribute("aria-expanded", String(!editor.hidden));
+      if (!editor.hidden) dateInput.focus();
+    });
+
+    deleteButton.addEventListener("click", function () {
+      subscriptions = subscriptions.filter(function (entry) {
+        return entry.id !== sub.id;
       });
       saveSubscriptions();
       renderSubscriptions();
+      renderRenewalReminders();
       updateSummary();
     });
+
+    li.append(row, editor);
+    subscriptionList.appendChild(li);
   });
 }
+
+function formatRenewalDate(dateString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(year, month - 1, day));
+}
+
+function daysUntilRenewal(dateString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const renewalDate = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((renewalDate - today) / 86400000);
+}
+
+function renderRenewalReminders() {
+  const datedSubscriptions = subscriptions
+    .filter(function (sub) {
+      return Boolean(sub.renewalDate);
+    })
+    .sort(function (first, second) {
+      return first.renewalDate.localeCompare(second.renewalDate);
+    });
+
+  renewalReminderList.replaceChildren();
+  renewalReminderEmpty.hidden = datedSubscriptions.length > 0;
+
+  datedSubscriptions.forEach(function (sub) {
+    const days = daysUntilRenewal(sub.renewalDate);
+    const item = document.createElement("li");
+    item.className = "renewal-reminder";
+
+    const info = document.createElement("div");
+    info.className = "item-info";
+
+    const name = document.createElement("span");
+    name.className = "item-title";
+    name.textContent = sub.name;
+
+    const date = document.createElement("span");
+    date.className = "item-sub";
+    date.textContent = formatRenewalDate(sub.renewalDate);
+
+    const status = document.createElement("span");
+    status.className = "reminder-status";
+    if (days < 0) {
+      status.textContent = "Renewal date passed · update next date";
+      status.classList.add("is-overdue");
+    } else if (days === 0) {
+      status.textContent = "Renews today";
+      status.classList.add("is-due-soon");
+    } else {
+      status.textContent = "In " + days + (days === 1 ? " day" : " days");
+      if (days <= Number(sub.reminderDays || 3)) status.classList.add("is-due-soon");
+    }
+
+    const amount = document.createElement("span");
+    amount.className = "item-amount expense-color";
+    amount.textContent = "₱" + Number(sub.amount).toFixed(2);
+
+    info.append(name, date, status);
+    item.append(info, amount);
+    renewalReminderList.appendChild(item);
+  });
+}
+
+function notificationsAvailable() {
+  return window.isSecureContext && "Notification" in window;
+}
+
+function updateNotificationControl() {
+  if (!notificationsAvailable()) {
+    notificationButton.disabled = true;
+    notificationButton.textContent = "Browser notifications unavailable";
+    notificationStatus.textContent = "Renewal dates still appear here. Browser notifications require a secure browser context.";
+    return;
+  }
+
+  if (window.Notification.permission === "granted") {
+    notificationButton.disabled = true;
+    notificationButton.textContent = "Notifications enabled";
+    notificationStatus.textContent = "You will get browser reminders while Budget Buddy is open.";
+  } else if (window.Notification.permission === "denied") {
+    notificationButton.disabled = true;
+    notificationButton.textContent = "Notifications blocked";
+    notificationStatus.textContent = "Allow notifications in your browser settings to receive reminder alerts.";
+  } else {
+    notificationButton.disabled = false;
+    notificationButton.textContent = "Enable browser notifications";
+    notificationStatus.textContent = "Browser alerts are optional; upcoming renewal dates are listed below.";
+  }
+}
+
+function checkRenewalNotifications() {
+  if (appShell.hidden || !notificationsAvailable() || window.Notification.permission !== "granted") return;
+
+  let sentReminders = [];
+  try {
+    sentReminders = JSON.parse(localStorage.getItem("budgetBuddySentRenewalReminders")) || [];
+  } catch (error) {
+    sentReminders = [];
+  }
+
+  let remindersChanged = false;
+  subscriptions.forEach(function (sub) {
+    if (!sub.renewalDate) return;
+
+    const days = daysUntilRenewal(sub.renewalDate);
+    const reminderDays = Number(sub.reminderDays || 3);
+    const reminderKey = String(sub.id) + ":" + sub.renewalDate;
+    if (days < 0 || days > reminderDays || sentReminders.includes(reminderKey)) return;
+
+    try {
+      new window.Notification("Subscription renewal coming up", {
+        body: days === 0 ? sub.name + " renews today." : sub.name + " renews in " + days + (days === 1 ? " day." : " days."),
+      });
+      sentReminders.push(reminderKey);
+      remindersChanged = true;
+    } catch (error) {
+      return;
+    }
+  });
+
+  if (remindersChanged) {
+    localStorage.setItem("budgetBuddySentRenewalReminders", JSON.stringify(sentReminders));
+  }
+}
+
+window.addEventListener("focus", checkRenewalNotifications);
+document.addEventListener("visibilitychange", function () {
+  if (!document.hidden) checkRenewalNotifications();
+});
+window.setInterval(checkRenewalNotifications, 60000);
 
 // ===================================================
 // UPDATE DASHBOARD TOTALS + BUDGET HEALTH INDICATOR
@@ -323,6 +605,7 @@ function updateSummary() {
 
   updateHealthBadge(totalIncome, balance);
   renderSpendingChart();
+  renderCategoryBudgets();
 }
 
 function renderSpendingChart() {
@@ -387,6 +670,89 @@ function renderSpendingChart() {
   });
 }
 
+function renderCategoryBudgets() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const currentMonth = year + "-" + month;
+  const expensesByCategory = new Map();
+
+  budgetMonthLabel.textContent = new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    year: "numeric",
+  }).format(today);
+
+  transactions.forEach(function (item) {
+    if (item.type !== "expense" || !item.date || item.date.slice(0, 7) !== currentMonth) return;
+
+    const categoryKey = item.category.trim().toLocaleLowerCase();
+    expensesByCategory.set(categoryKey, (expensesByCategory.get(categoryKey) || 0) + item.amount);
+  });
+
+  const sortedBudgets = categoryBudgets.slice().sort(function (first, second) {
+    return first.category.localeCompare(second.category);
+  });
+
+  categoryBudgetList.replaceChildren();
+  categoryBudgetEmpty.hidden = sortedBudgets.length > 0;
+
+  sortedBudgets.forEach(function (budget) {
+    const categoryKey = budget.category.toLocaleLowerCase();
+    const spent = expensesByCategory.get(categoryKey) || 0;
+    const remaining = budget.limit - spent;
+    const isOverBudget = remaining < 0;
+    const isNearLimit = !isOverBudget && spent >= budget.limit * 0.8;
+    const progressPercent = Math.min((spent / budget.limit) * 100, 100);
+
+    const item = document.createElement("li");
+    item.className = "category-budget-item";
+
+    const heading = document.createElement("div");
+    heading.className = "budget-row";
+
+    const category = document.createElement("span");
+    category.className = "chart-category";
+    category.textContent = budget.category;
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "budget-remove";
+    removeButton.textContent = "Remove";
+    removeButton.setAttribute("aria-label", "Remove " + budget.category + " budget");
+    removeButton.addEventListener("click", function () {
+      categoryBudgets = categoryBudgets.filter(function (entry) {
+        return entry.category.toLocaleLowerCase() !== categoryKey;
+      });
+      saveCategoryBudgets();
+      renderCategoryBudgets();
+    });
+
+    const progress = document.createElement("div");
+    progress.className = "budget-progress";
+    progress.classList.toggle("is-near-limit", isNearLimit);
+    progress.classList.toggle("is-over-budget", isOverBudget);
+    progress.setAttribute("role", "progressbar");
+    progress.setAttribute("aria-label", budget.category + " monthly budget progress");
+    progress.setAttribute("aria-valuemin", "0");
+    progress.setAttribute("aria-valuemax", budget.limit.toFixed(2));
+    progress.setAttribute("aria-valuenow", Math.min(spent, budget.limit).toFixed(2));
+
+    const bar = document.createElement("span");
+    bar.className = "budget-progress-bar";
+    bar.style.width = progressPercent + "%";
+    progress.appendChild(bar);
+
+    const usage = document.createElement("p");
+    usage.className = "budget-usage";
+    usage.textContent = "₱" + spent.toFixed(2) + " of ₱" + budget.limit.toFixed(2) + " · " +
+      (isOverBudget ? "₱" + Math.abs(remaining).toFixed(2) + " over budget" : "₱" + remaining.toFixed(2) + " remaining");
+
+    heading.append(category, removeButton);
+    item.append(heading, progress, usage);
+    categoryBudgetList.appendChild(item);
+  });
+}
+
 // ---- Decide the budget health color: Good / Warning / Over Budget ----
 function updateHealthBadge(totalIncome, balance) {
   healthBadge.classList.remove("badge-good", "badge-warning", "badge-over");
@@ -417,4 +783,7 @@ function updateHealthBadge(totalIncome, balance) {
 // ===================================================
 renderTransactions();
 renderSubscriptions();
+renderRenewalReminders();
+updateNotificationControl();
+checkRenewalNotifications();
 updateSummary();

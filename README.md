@@ -83,11 +83,13 @@ Then open the local URL it prints.
 | Feature | Where |
 |---|---|
 | Add income/expense | "Add a Transaction" form |
-| Add recurring subscription (Monthly/Yearly) | "Recurring Subscriptions" form |
+| Add recurring subscription (Monthly/Yearly) with a next renewal date and reminder lead time | "Recurring Subscriptions" form |
+| View upcoming renewals and optionally receive browser notifications | Renewal Reminders on the Subscriptions page |
 | Filter transactions (All / Income / Expenses) | Dropdown above transaction history |
 | Delete a transaction or subscription | Delete button on each list item |
 | Live totals (income, expenses, balance, subscriptions) | Dashboard cards |
 | Budget health indicator (Good / Warning / Over Budget) | Badge below the dashboard cards |
+| Monthly spending limits by category with progress, remaining, and over-budget amounts | Dashboard category budgets |
 | Prototype sign-in and sign-up (any non-empty text is accepted) | Authentication screen |
 | Navigate between app views | Navigation bar |
 
@@ -109,4 +111,5 @@ Then open the local URL it prints.
 
 - All data is stored only in the current browser (`localStorage`). Clearing browser data will erase transactions and subscriptions.
 - Authentication is for prototype demonstration only. There is no backend, credential validation, or secure account system; do not enter real passwords.
+- Subscription reminder dates are stored locally. Browser notifications require permission and work only while Budget Buddy is open in a supported secure browser context; upcoming dates remain listed in the app.
 - This is Milestone 1 of the project — charts and real payment integration are not included yet. See the Implementation Plan for planned future improvements.

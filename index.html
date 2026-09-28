@@ -148,6 +148,30 @@
         <ul id="spendingChart" class="chart-list" aria-label="Expenses grouped by category"></ul>
         <p id="spendingChartEmpty" class="chart-empty">No expenses to chart yet. Add an expense transaction to see your spending breakdown.</p>
       </div>
+
+      <div class="category-budgets" aria-labelledby="categoryBudgetsTitle">
+        <div class="spending-chart-heading">
+          <div>
+            <p class="page-eyebrow">Plan ahead</p>
+            <h3 id="categoryBudgetsTitle">Monthly Category Budgets</h3>
+          </div>
+          <p class="chart-note">Set a monthly limit for a category and track this month's expenses. Saving an existing category updates its limit.</p>
+        </div>
+        <p class="budget-period">Progress for <span id="budgetMonthLabel"></span></p>
+        <form id="categoryBudgetForm" class="budget-form">
+          <div class="form-row">
+            <label for="budgetCategory">Category</label>
+            <input type="text" id="budgetCategory" placeholder="e.g. Food" required>
+          </div>
+          <div class="form-row">
+            <label for="budgetLimit">Monthly limit (₱)</label>
+            <input type="number" id="budgetLimit" min="0.01" step="0.01" placeholder="0.00" required>
+          </div>
+          <button type="submit" class="btn-primary">Save Budget</button>
+        </form>
+        <ul id="categoryBudgetList" class="category-budget-list" aria-label="Monthly category budgets"></ul>
+        <p id="categoryBudgetEmpty" class="chart-empty">No category budgets yet. Set a monthly limit to start tracking your progress.</p>
+      </div>
     </section>
 
     <!-- Form to add income or expense transactions -->
@@ -196,7 +220,20 @@
       <div class="page-heading">
         <p class="page-eyebrow">Regular commitments</p>
         <h2 class="title" id="subscriptionsTitle">Recurring Subscriptions</h2>
-        <p class="page-description">Track services and other repeating costs. Enter the amount and billing cycle; yearly charges are converted to a monthly estimate for your budget. Use Delete to remove a subscription.</p>
+        <p class="page-description">Track repeating costs and their next renewal dates. Set how early you want a reminder; browser notifications are optional, and upcoming dates remain visible here.</p>
+      </div>
+
+      <div class="renewal-reminders" aria-labelledby="renewalRemindersTitle">
+        <div class="reminder-heading">
+          <div>
+            <p class="page-eyebrow">Coming up</p>
+            <h3 id="renewalRemindersTitle">Renewal Reminders</h3>
+          </div>
+          <button type="button" id="notificationButton" class="notification-button">Enable browser notifications</button>
+        </div>
+        <p id="notificationStatus" class="notification-status" aria-live="polite"></p>
+        <ul id="renewalReminderList" class="renewal-reminder-list" aria-label="Upcoming subscription renewals"></ul>
+        <p id="renewalReminderEmpty" class="chart-empty">No renewal dates yet. Add one when creating a subscription or use Set reminder on an existing subscription.</p>
       </div>
 
       <form id="subscriptionForm">
@@ -215,6 +252,20 @@
           <select id="subscriptionCycle" required>
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="subscriptionRenewalDate">Next renewal date</label>
+          <input type="date" id="subscriptionRenewalDate" required>
+        </div>
+
+        <div class="form-row">
+          <label for="subscriptionReminderDays">Remind me before</label>
+          <select id="subscriptionReminderDays" required>
+            <option value="1">1 day</option>
+            <option value="3" selected>3 days</option>
+            <option value="7">7 days</option>
           </select>
         </div>
 

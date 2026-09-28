@@ -609,6 +609,121 @@ body {
   display: none;
 }
 
+.category-budgets {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e7eae4;
+}
+
+.category-budgets .spending-chart-heading {
+  margin-bottom: 10px;
+}
+
+.budget-period {
+  margin-bottom: 18px;
+  color: #81877f;
+  font-size: 12px;
+}
+
+.budget-form {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 16px;
+  background: #f4f6ef;
+}
+
+.budget-form .form-row {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.budget-form .form-row input {
+  min-height: 38px;
+  background: #fff;
+}
+
+.budget-form .btn-primary {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.category-budget-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
+  list-style: none;
+}
+
+.category-budget-item {
+  min-width: 0;
+}
+
+.budget-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+
+.budget-remove {
+  flex: 0 0 auto;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: #6a766d;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.budget-remove:hover {
+  color: #a33131;
+}
+
+.budget-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #edf0e9;
+}
+
+.budget-progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #3e7964;
+  transition: width 220ms ease;
+}
+
+.budget-progress.is-near-limit .budget-progress-bar {
+  background: #c18b2c;
+}
+
+.budget-progress.is-over-budget .budget-progress-bar {
+  background: #c62828;
+}
+
+.budget-usage {
+  margin-top: 6px;
+  color: #68716a;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-progress.is-over-budget + .budget-usage {
+  color: #a33131;
+  font-weight: 700;
+}
+
+.category-budgets .chart-empty {
+  margin-top: 18px;
+}
+
 /* ---------- Dashboard summary cards ---------- */
 .summary-cards {
   display: flex;
@@ -737,6 +852,163 @@ body {
   border-bottom: 1px solid #eee;
 }
 
+.renewal-reminders {
+  margin: 26px 0;
+  padding: 20px 0;
+  border-top: 1px solid #e7eae4;
+  border-bottom: 1px solid #e7eae4;
+}
+
+.reminder-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reminder-heading h3 {
+  color: #173b38;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.reminder-heading .page-eyebrow {
+  margin-bottom: 3px;
+}
+
+.notification-button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #285449;
+  border-radius: 3px;
+  background: #fff;
+  color: #285449;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.notification-button:hover:not(:disabled) {
+  background: #f4f6ef;
+}
+
+.notification-button:disabled {
+  border-color: #d9ded6;
+  color: #727970;
+  cursor: default;
+}
+
+.notification-status {
+  margin: 8px 0 14px;
+  color: #81877f;
+  font-size: 12px;
+}
+
+.renewal-reminder-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+}
+
+.renewal-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  background: #f4f6ef;
+}
+
+.reminder-status {
+  color: #68716a;
+  font-size: 12px;
+}
+
+.reminder-status.is-due-soon {
+  color: #8a641f;
+  font-weight: 700;
+}
+
+.reminder-status.is-overdue {
+  color: #a33131;
+  font-weight: 700;
+}
+
+#subscriptionList li.subscription-item {
+  display: block;
+  padding: 14px 10px;
+}
+
+.subscription-row,
+.subscription-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.subscription-row {
+  min-width: 0;
+}
+
+.subscription-actions {
+  flex: 0 0 auto;
+}
+
+.renewal-summary {
+  overflow-wrap: anywhere;
+}
+
+.reminder-edit-button {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #285449;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.renewal-editor {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(120px, 0.7fr) auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  background: #f4f6ef;
+}
+
+.renewal-editor-field label {
+  display: grid;
+  gap: 5px;
+  color: #333;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.renewal-editor-field input,
+.renewal-editor-field select {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+}
+
+.renewal-editor .btn-primary {
+  min-height: 36px;
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+
 .item-info {
   display: flex;
   flex-direction: column;
@@ -809,5 +1081,39 @@ footer {
   .chart-note {
     max-width: none;
     text-align: left;
+  }
+
+  .budget-form {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .budget-form .btn-primary {
+    width: 100%;
+  }
+
+  .reminder-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .renewal-reminder {
+    align-items: start;
+  }
+
+  .subscription-row {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .subscription-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .renewal-editor {
+    grid-template-columns: 1fr;
   }
 }
