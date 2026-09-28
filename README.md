@@ -86,6 +86,7 @@ Then open the local URL it prints.
 | Add recurring subscription (Monthly/Yearly) with a next renewal date and reminder lead time | "Recurring Subscriptions" form |
 | View upcoming renewals and optionally receive browser notifications | Renewal Reminders on the Subscriptions page |
 | Filter transactions (All / Income / Expenses) | Dropdown above transaction history |
+| Export all or filtered transaction history as a spreadsheet-friendly CSV | Export CSV button on History |
 | Delete a transaction or subscription | Delete button on each list item |
 | Live totals (income, expenses, balance, subscriptions) | Dashboard cards |
 | Budget health indicator (Good / Warning / Over Budget) | Badge below the dashboard cards |

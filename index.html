@@ -284,12 +284,17 @@
         <p class="page-description">Review the income and expenses you have recorded. Filter the list to show everything, income only, or expenses only; delete an entry to remove it from your totals.</p>
       </div>
       <div class="history-header">
-        <select id="filterType">
-          <option value="all">All</option>
-          <option value="income">Income Only</option>
-          <option value="expense">Expenses Only</option>
-        </select>
+        <div class="history-controls">
+          <label class="visually-hidden" for="filterType">Filter transactions</label>
+          <select id="filterType">
+            <option value="all">All</option>
+            <option value="income">Income Only</option>
+            <option value="expense">Expenses Only</option>
+          </select>
+          <button type="button" id="exportTransactionsButton" class="export-button" disabled>Export CSV</button>
+        </div>
       </div>
+      <p id="exportStatus" class="export-status" aria-live="polite"></p>
 
       <!-- List of transactions gets filled in by JavaScript -->
       <ul id="transactionList" class="item-list"></ul>

@@ -118,6 +118,8 @@ if (savedPrototypeUser) {
 const transactionForm = document.getElementById("transactionForm");
 const transactionList = document.getElementById("transactionList");
 const filterType = document.getElementById("filterType");
+const exportTransactionsButton = document.getElementById("exportTransactionsButton");
+const exportStatus = document.getElementById("exportStatus");
 
 const subscriptionForm = document.getElementById("subscriptionForm");
 const subscriptionList = document.getElementById("subscriptionList");
@@ -268,20 +270,75 @@ filterType.addEventListener("change", function () {
   renderTransactions();
 });
 
+exportTransactionsButton.addEventListener("click", exportTransactionsCsv);
+
+function getFilteredTransactions() {
+  return transactions.filter(function (item) {
+    return filterType.value === "all" || item.type === filterType.value;
+  });
+}
+
+function escapeCsvValue(value) {
+  let text = String(value == null ? "" : value);
+
+  if (/^[\t\r ]*[=+\-@]/.test(text)) {
+    text = "'" + text;
+  }
+
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function exportTransactionsCsv() {
+  const filteredTransactions = getFilteredTransactions();
+  if (filteredTransactions.length === 0) return;
+
+  const rows = [
+    ["Date", "Type", "Category", "Amount (PHP)", "Note"],
+    ...filteredTransactions.map(function (item) {
+      return [
+        item.date,
+        item.type === "income" ? "Income" : "Expense",
+        item.category,
+        Number(item.amount).toFixed(2),
+        item.note || "",
+      ];
+    }),
+  ];
+  const csv = "\uFEFF" + rows.map(function (row) {
+    return row.map(escapeCsvValue).join(",");
+  }).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const downloadUrl = URL.createObjectURL(blob);
+  const downloadLink = document.createElement("a");
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const filterName = filterType.value === "expense" ? "expenses" : filterType.value;
+
+  downloadLink.href = downloadUrl;
+  downloadLink.download = "budget-buddy-transactions-" + filterName + "-" + dateStamp + ".csv";
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  window.setTimeout(function () {
+    URL.revokeObjectURL(downloadUrl);
+  }, 1000);
+
+  exportStatus.textContent = "Exported " + filteredTransactions.length +
+    (filteredTransactions.length === 1 ? " transaction." : " transactions.");
+}
+
 // ===================================================
 // RENDER TRANSACTIONS (based on selected filter)
 // ===================================================
 function renderTransactions() {
-  const selectedFilter = filterType.value; // "all", "income", or "expense"
+  const filteredTransactions = getFilteredTransactions();
 
   transactionList.innerHTML = ""; // clear the list before re-drawing it
+  exportTransactionsButton.disabled = filteredTransactions.length === 0;
+  exportStatus.textContent = filteredTransactions.length === 0
+    ? transactions.length === 0 ? "No transactions to export yet." : "No transactions match this filter."
+    : "";
 
-  transactions
-    .filter(function (item) {
-      if (selectedFilter === "all") return true;
-      return item.type === selectedFilter;
-    })
-    .forEach(function (item) {
+  filteredTransactions.forEach(function (item) {
       const li = document.createElement("li");
 
       const colorClass = item.type === "income" ? "income-color" : "expense-color";
@@ -299,7 +356,7 @@ function renderTransactions() {
       `;
 
       transactionList.appendChild(li);
-    });
+  });
 
   // hook up the delete buttons we just created
   document.querySelectorAll("#transactionList .delete-btn").forEach(function (btn) {
