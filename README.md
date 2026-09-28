@@ -3,7 +3,29 @@
 
 A simple browser-based personal finance and subscription tracker. Users can log income and expenses, manage recurring subscriptions, filter their transaction history, and see a real-time budget health indicator.
 
-**Current phase:** Static site (HTML, CSS, JavaScript). Data is saved in the browser using `localStorage` — no backend/server needed.
+**Current phase:** Static front-end prototype (HTML, CSS, JavaScript). App data and the demo sign-in session are saved in the browser using `localStorage` — no backend/server needed.
+
+---
+
+## Screenshots
+
+### Sign Up
+![Budget Buddy sign-up page](img/Sign-Up%20Page.PNG)
+
+### Sign In
+![Budget Buddy sign-in page](img/Sign-In%20Page.PNG)
+
+### Dashboard
+![Budget Buddy dashboard](img/Dashboard.PNG)
+
+### Add Transaction
+![Budget Buddy add transaction page](img/Add%20Transaction.PNG)
+
+### Subscription
+![Budget Buddy subscriptions page](img/Subscription.PNG)
+
+### History
+![Budget Buddy transaction history page](img/History.PNG)
 
 ---
 
@@ -20,16 +42,17 @@ A simple browser-based personal finance and subscription tracker. Users can log 
 
 ```
 budget-buddy/
-├── index.html          # Main app page (dashboard, forms, lists)
+├── index.html          # Authentication and hash-routed app views
+├── img/                # Screenshots shown in this README
 │
 ├── css/
-│   └── style.css        # All styling, including budget health colors
+│   └── style.css       # Authentication, navigation, and app styling
 │
 ├── js/
-│   └── main.js           # App logic: add/delete/filter, totals, health indicator
+│   └── main.js         # Authentication prototype, routing, and tracker logic
 ```
 
-Everything lives on one page. The page links its CSS/JS like this:
+The app uses one HTML document with separate hash-routed views for Dashboard, Add Transaction, Subscriptions, and History. The page links its CSS and JavaScript like this:
 ```html
 <link rel="stylesheet" href="css/style.css">
 <script src="js/main.js"></script>
@@ -65,6 +88,8 @@ Then open the local URL it prints.
 | Delete a transaction or subscription | Delete button on each list item |
 | Live totals (income, expenses, balance, subscriptions) | Dashboard cards |
 | Budget health indicator (Good / Warning / Over Budget) | Badge below the dashboard cards |
+| Prototype sign-in and sign-up (any non-empty text is accepted) | Authentication screen |
+| Navigate between app views | Navigation bar |
 
 ---
 
@@ -83,4 +108,5 @@ Then open the local URL it prints.
 ## Notes
 
 - All data is stored only in the current browser (`localStorage`). Clearing browser data will erase transactions and subscriptions.
-- This is Milestone 1 of the project — no login system, charts, or real payment integration yet. See the Implementation Plan for planned future improvements.
+- Authentication is for prototype demonstration only. There is no backend, credential validation, or secure account system; do not enter real passwords.
+- This is Milestone 1 of the project — charts and real payment integration are not included yet. See the Implementation Plan for planned future improvements.
