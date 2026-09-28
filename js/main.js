@@ -7,6 +7,75 @@
 let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 let subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
 
+const authGate = document.getElementById("authGate");
+const appShell = document.getElementById("appShell");
+const signInForm = document.getElementById("signInForm");
+const signUpForm = document.getElementById("signUpForm");
+const signInView = document.getElementById("signInView");
+const signUpView = document.getElementById("signUpView");
+const signInTab = document.getElementById("signInTab");
+const signUpTab = document.getElementById("signUpTab");
+const signedInUser = document.getElementById("signedInUser");
+const prototypeSessionKey = "budgetBuddyPrototypeUser";
+
+function showApp(userName) {
+  signedInUser.textContent = userName;
+  authGate.hidden = true;
+  appShell.hidden = false;
+}
+
+function setAuthMode(mode) {
+  const signingUp = mode === "signup";
+  signInView.hidden = signingUp;
+  signUpView.hidden = !signingUp;
+  signInTab.classList.toggle("is-active", !signingUp);
+  signUpTab.classList.toggle("is-active", signingUp);
+  signInTab.setAttribute("aria-pressed", String(!signingUp));
+  signUpTab.setAttribute("aria-pressed", String(signingUp));
+}
+
+document.querySelectorAll("[data-auth-mode]").forEach(function (button) {
+  button.addEventListener("click", function () {
+    setAuthMode(button.getAttribute("data-auth-mode"));
+  });
+});
+
+signInTab.addEventListener("click", function () {
+  setAuthMode("signin");
+});
+
+signUpTab.addEventListener("click", function () {
+  setAuthMode("signup");
+});
+
+signInForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+  const identifier = document.getElementById("signInEmail").value.trim();
+  localStorage.setItem(prototypeSessionKey, identifier);
+  showApp(identifier);
+});
+
+signUpForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+  const name = document.getElementById("signUpName").value.trim();
+  localStorage.setItem(prototypeSessionKey, name);
+  showApp(name);
+});
+
+document.getElementById("signOutButton").addEventListener("click", function () {
+  localStorage.removeItem(prototypeSessionKey);
+  appShell.hidden = true;
+  authGate.hidden = false;
+  signInForm.reset();
+  signUpForm.reset();
+  setAuthMode("signin");
+});
+
+const savedPrototypeUser = localStorage.getItem(prototypeSessionKey);
+if (savedPrototypeUser) {
+  showApp(savedPrototypeUser);
+}
+
 // ---- Grab the HTML elements we need to work with ----
 const transactionForm = document.getElementById("transactionForm");
 const transactionList = document.getElementById("transactionList");

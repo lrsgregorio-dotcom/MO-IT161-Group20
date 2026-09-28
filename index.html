@@ -8,6 +8,76 @@
 </head>
 <body>
 
+  <main id="authGate" class="auth-gate">
+    <div class="auth-layout">
+      <section class="auth-story" aria-label="Budget Buddy">
+        <a class="auth-brand" href="#" aria-label="Budget Buddy home">
+          <span class="logo-icon" aria-hidden="true">💰</span>
+          <span>Budget Buddy</span>
+        </a>
+        <div class="story-copy">
+          <p class="story-kicker">Make room for what matters</p>
+          <h1>A clearer view of your money starts here.</h1>
+          <p class="story-description">Bring everyday spending and recurring costs into one calm, simple place.</p>
+        </div>
+        <div class="story-mark" aria-hidden="true"><span>₱</span></div>
+        <p class="story-footnote">Your finances, thoughtfully in view.</p>
+      </section>
+
+      <section class="auth-panel" aria-labelledby="authTitle">
+        <div class="auth-content">
+          <div class="auth-tabs" role="group" aria-label="Account access">
+            <button type="button" class="auth-tab is-active" id="signInTab" aria-pressed="true">Sign in</button>
+            <button type="button" class="auth-tab" id="signUpTab" aria-pressed="false">Create account</button>
+          </div>
+
+          <div id="signInView">
+            <p class="form-eyebrow">Welcome back</p>
+            <h2 id="authTitle">Sign in to your account</h2>
+            <p class="form-intro">Pick up where you left off.</p>
+            <form id="signInForm" class="auth-form">
+              <div class="auth-field">
+                <label for="signInEmail">Email or username</label>
+                <input type="text" id="signInEmail" name="identifier" autocomplete="username" placeholder="Your email or username" required>
+              </div>
+              <div class="auth-field">
+                <label for="signInPassword">Password</label>
+                <input type="password" id="signInPassword" name="password" autocomplete="current-password" placeholder="Enter your password" required>
+              </div>
+              <button type="submit" class="auth-submit">Sign in <span aria-hidden="true">→</span></button>
+            </form>
+            <p class="auth-switch-copy">New to Budget Buddy? <button type="button" class="text-button" data-auth-mode="signup">Create an account</button></p>
+          </div>
+
+          <div id="signUpView" hidden>
+            <p class="form-eyebrow">A fresh start</p>
+            <h2>Create your account</h2>
+            <p class="form-intro">A little more clarity is just ahead.</p>
+            <form id="signUpForm" class="auth-form">
+              <div class="auth-field">
+                <label for="signUpName">Your name</label>
+                <input type="text" id="signUpName" name="name" autocomplete="name" placeholder="What should we call you?" required>
+              </div>
+              <div class="auth-field">
+                <label for="signUpEmail">Email or username</label>
+                <input type="text" id="signUpEmail" name="identifier" autocomplete="username" placeholder="Your email or username" required>
+              </div>
+              <div class="auth-field">
+                <label for="signUpPassword">Password</label>
+                <input type="password" id="signUpPassword" name="password" autocomplete="new-password" placeholder="Create a password" required>
+              </div>
+              <button type="submit" class="auth-submit">Create account <span aria-hidden="true">→</span></button>
+            </form>
+            <p class="auth-switch-copy">Already have an account? <button type="button" class="text-button" data-auth-mode="signin">Sign in</button></p>
+          </div>
+        </div>
+        <p class="auth-legal">By continuing, you agree to keep your account details private.</p>
+      </section>
+    </div>
+  </main>
+
+  <div id="appShell" hidden>
+
   <!-- Header: logo and app name -->
   <header class="navbar">
     <nav>
@@ -21,6 +91,10 @@
         <li><a href="#subscriptions">Subscriptions</a></li>
         <li><a href="#history">History</a></li>
       </ul>
+      <div class="account-actions">
+        <span id="signedInUser" class="signed-in-user"></span>
+        <button type="button" id="signOutButton" class="sign-out-button">Sign out</button>
+      </div>
     </nav>
   </header>
 
@@ -147,6 +221,8 @@
   <footer>
     <p>Budget Buddy &mdash; a simple personal finance tracker built with HTML, CSS &amp; JavaScript.</p>
   </footer>
+
+  </div>
 
   <script src="js/main.js"></script>
 </body>
