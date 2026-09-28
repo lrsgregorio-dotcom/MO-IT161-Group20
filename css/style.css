@@ -517,6 +517,98 @@ body {
   font-size: 13px;
 }
 
+.spending-chart {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e7eae4;
+}
+
+.spending-chart-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.spending-chart-heading .page-eyebrow {
+  margin-bottom: 4px;
+}
+
+.spending-chart-heading h3 {
+  color: #173b38;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.chart-note {
+  max-width: 290px;
+  color: #81877f;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.chart-list {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+}
+
+.chart-item {
+  min-width: 0;
+}
+
+.chart-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.chart-category {
+  overflow-wrap: anywhere;
+  color: #35443b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chart-amount {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #edf0e9;
+}
+
+.chart-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #3e7964;
+  transition: width 220ms ease;
+}
+
+.chart-empty {
+  padding: 18px;
+  background: #f4f6ef;
+  color: #68716a;
+  font-size: 13px;
+  text-align: center;
+}
+
+.chart-empty[hidden] {
+  display: none;
+}
+
 /* ---------- Dashboard summary cards ---------- */
 .summary-cards {
   display: flex;
@@ -706,5 +798,16 @@ footer {
   .page-description,
   .health-explainer {
     font-size: 13px;
+  }
+
+  .spending-chart-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .chart-note {
+    max-width: none;
+    text-align: left;
   }
 }

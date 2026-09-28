@@ -120,6 +120,8 @@ const totalExpensesEl = document.getElementById("totalExpenses");
 const totalBalanceEl = document.getElementById("totalBalance");
 const totalSubscriptionsEl = document.getElementById("totalSubscriptions");
 const healthBadge = document.getElementById("healthBadge");
+const spendingChart = document.getElementById("spendingChart");
+const spendingChartEmpty = document.getElementById("spendingChartEmpty");
 
 // ===================================================
 // SAVE TO LOCAL STORAGE
@@ -320,6 +322,69 @@ function updateSummary() {
   totalBalanceEl.textContent = "₱" + balance.toFixed(2);
 
   updateHealthBadge(totalIncome, balance);
+  renderSpendingChart();
+}
+
+function renderSpendingChart() {
+  const categoryTotals = new Map();
+
+  transactions.forEach(function (item) {
+    if (item.type !== "expense") return;
+
+    const category = item.category.trim();
+    const categoryKey = category.toLocaleLowerCase();
+    const existing = categoryTotals.get(categoryKey);
+
+    if (existing) {
+      existing.amount += item.amount;
+    } else {
+      categoryTotals.set(categoryKey, { category: category, amount: item.amount });
+    }
+  });
+
+  const categories = Array.from(categoryTotals.values()).sort(function (first, second) {
+    return second.amount - first.amount;
+  });
+
+  spendingChart.replaceChildren();
+  spendingChartEmpty.hidden = categories.length > 0;
+
+  if (categories.length === 0) return;
+
+  const largestAmount = categories[0].amount;
+
+  categories.forEach(function (entry) {
+    const item = document.createElement("li");
+    item.className = "chart-item";
+
+    const row = document.createElement("div");
+    row.className = "chart-row";
+
+    const category = document.createElement("span");
+    category.className = "chart-category";
+    category.textContent = entry.category;
+
+    const amount = document.createElement("span");
+    amount.className = "chart-amount expense-color";
+    amount.textContent = "₱" + entry.amount.toFixed(2);
+
+    const track = document.createElement("div");
+    track.className = "chart-track";
+    track.setAttribute("role", "meter");
+    track.setAttribute("aria-valuemin", "0");
+    track.setAttribute("aria-valuemax", largestAmount.toFixed(2));
+    track.setAttribute("aria-valuenow", entry.amount.toFixed(2));
+    track.setAttribute("aria-label", entry.category + " expenses");
+
+    const bar = document.createElement("span");
+    bar.className = "chart-bar";
+    bar.style.width = (entry.amount / largestAmount) * 100 + "%";
+
+    row.append(category, amount);
+    track.appendChild(bar);
+    item.append(row, track);
+    spendingChart.appendChild(item);
+  });
 }
 
 // ---- Decide the budget health color: Good / Warning / Over Budget ----

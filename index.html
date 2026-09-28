@@ -136,6 +136,18 @@
         <span id="healthBadge" class="badge badge-good">Good</span>
       </div>
       <p class="health-explainer">Your balance is income minus expenses and monthly subscription costs. Yearly subscriptions are divided by 12. A positive balance above 20% of income is Good; below 20% is Warning; a negative balance is Over Budget.</p>
+
+      <div class="spending-chart" aria-labelledby="spendingChartTitle">
+        <div class="spending-chart-heading">
+          <div>
+            <p class="page-eyebrow">Where it goes</p>
+            <h3 id="spendingChartTitle">Spending by Category</h3>
+          </div>
+          <p class="chart-note">Expenses ranked highest first. Bars compare each category with your largest expense category.</p>
+        </div>
+        <ul id="spendingChart" class="chart-list" aria-label="Expenses grouped by category"></ul>
+        <p id="spendingChartEmpty" class="chart-empty">No expenses to chart yet. Add an expense transaction to see your spending breakdown.</p>
+      </div>
     </section>
 
     <!-- Form to add income or expense transactions -->
