@@ -145,61 +145,133 @@ The edit UI sends `PUT` with the changed fields. The delete action sends `DELETE
 
 ## 9. Gradual Work and Commit Boundaries
 
-Make one change from this list at a time. Review and test it before making the next. Commit and push each completed increment using the team's commit conventions.
+Use the prompts below one at a time, in order. Each prompt is self-contained for use in a new chat in this same workspace. Review and verify each result before moving on, then make your own commit and push. Do not ask Copilot to commit or push.
 
-### Step 1: Confirm course setup and protect current work
+### Step 1: Confirm setup and transaction-data decision
 
-Check that Node.js LTS and npm are installed. Review the official Milestone 2 assignment and team submission rules. Decide how existing browser-local transactions should be handled before switching the transaction UI to the API; do not silently erase or overwrite them.
+**Copy-paste prompt:**
 
-**Completion check:** Node and npm versions are available, requirements are confirmed, and the local-data transition decision is recorded.
+```text
+We are beginning Milestone 2 for Budget Buddy in this workspace. Read docs/Budget_Buddy_Backend_Implementation.md. The course guide teaches Node.js LTS, Express routes, fetch() communication, JSON request/response bodies, and persistent JSON-file storage using Node's fs module. It does not require a database or real authentication.
 
-### Step 2: Prepare a public frontend directory
+This is a read-only checkpoint. Check the available Node.js and npm versions. Inspect the project files and Git status, but do not edit files, install packages, or switch branches. The current browser app stores transactions in localStorage under the "transactions" key in js/main.js; do not assume you can inspect browser storage from the workspace.
 
-Move `index.html`, `css/`, and `js/` into `public/`. Keep `img/` and `docs/` at the root. Update README paths and instructions while preserving the current app behavior.
+Report whether Node and npm are available, confirm the current storage/server setup, and note any course or repository constraints. Then ask me to choose how to handle existing browser transactions before migration: (A) import them once to the backend, (B) manually re-enter them, or (C) start with an empty backend file while leaving browser data untouched. Do not continue to Step 2 until I choose. Do not commit or push.
+```
 
-**Completion check:** The app still loads its styles and scripts from the new location, and README screenshot links remain valid.
+**Completion check:** Node/npm status and constraints are reported, and the user explicitly chooses a local-data transition.
 
-### Step 3: Initialize Node and Express
+### Step 2: Move the frontend into `public/`
 
-Create `package.json`, install Express, and add `app.js` to serve `public/`. Add a health-check endpoint and a start script. Add `node_modules/` and any private runtime files to `.gitignore` as appropriate.
+**Copy-paste prompt:**
 
-**Completion check:** `npm start` runs the app at the local URL, the frontend is served by Express, and the health check returns JSON.
+```text
+Continue Milestone 2 for Budget Buddy. Read docs/Budget_Buddy_Backend_Implementation.md and inspect the file tree and Git status. Step 1 is complete; my transaction-data decision is: [PASTE MY STEP 1 CHOICE HERE].
 
-### Step 4: Add transaction file storage
+For this step only, move index.html, css/, and js/ into public/ so Express can serve the browser app later. Keep docs/ and img/ at the repository root so the README screenshot links remain valid. Preserve the existing interface and behavior, and check/update relative CSS, JavaScript, and image paths as needed. Update only README paths or instructions made inaccurate by the move.
 
-Create the initial `data/transactions.json` and add small server-side read/write helpers using the Node file system API. Handle missing or malformed data without returning a false success.
+Do not add Express, package.json, API routes, persistence, or change app behavior yet. Verify the new asset paths and README screenshot links. Report changed paths and results. Do not commit or push.
+```
 
-**Completion check:** The server can read an empty transaction list and write/read a test record across a server restart.
+**Completion check:** Frontend files are under `public/`; asset references work and root README image links remain valid.
 
-### Step 5: Add transaction read and create routes
+### Step 3: Add Express and `npm start`
 
-Implement `GET /api/transactions` and `POST /api/transactions`, including JSON parsing, server-side validation, server-generated IDs, and appropriate status codes.
+**Copy-paste prompt:**
 
-**Completion check:** A valid POST returns `201`, appears in a subsequent GET, and remains after restarting the server; invalid input returns an error response.
+```text
+Continue Milestone 2 for Budget Buddy. Read docs/Budget_Buddy_Backend_Implementation.md and inspect the files and Git status. Step 2 is complete: index.html, css/, and js/ are under public/, while docs/ and img/ remain at the root.
+
+For this step only, initialize the Node project, install Express, and create app.js. Configure Express to serve public/ and return JSON from GET /api/health. Add an npm start script so the app starts from the repository root with "npm start" after dependencies are installed. Use a suitable local port and allow an environment-variable override if appropriate. Add necessary ignore rules such as node_modules/ without ignoring project source.
+
+Do not add transaction routes, persistence, authentication, a database, or frontend fetch() calls yet. Run the server with npm start and verify both the frontend and health route locally. Report commands, changed files, and results. Do not commit or push.
+```
+
+**Completion check:** `npm start` serves the frontend through Express and `/api/health` returns JSON.
+
+### Step 4: Add JSON-file transaction storage
+
+**Copy-paste prompt:**
+
+```text
+Continue Milestone 2 for Budget Buddy. Read the file-persistence rules in docs/Budget_Buddy_Backend_Implementation.md and inspect the server, files, and Git status. Steps 2-3 are complete: Express serves public/, npm start works, and GET /api/health returns JSON.
+
+For this step only, implement a small server-side transaction storage module using Node.js fs/promises and data/transactions.json. Keep data/ outside public/. Store an array of transaction records. Handle a missing file through an intentional initialization path. Do not silently replace malformed JSON with an empty array or report success when a file write fails. Keep file access separate from HTTP routes where practical, without unnecessary abstractions.
+
+Do not add API routes or change frontend code. Follow the Step 1 local-data decision, but do not import browser data in this step. Avoid committing personal transaction data; choose a safe empty-file/runtime initialization consistent with the course submission requirements. Add a focused verification, including that written data survives server restart. Report files, results, and limitations. Do not commit or push.
+```
+
+**Completion check:** Storage reads/writes valid JSON, handles missing or malformed data explicitly, persists across restart, and is outside `public/`.
+
+### Step 5: Add transaction list and create routes
+
+**Copy-paste prompt:**
+
+```text
+Continue Milestone 2 for Budget Buddy. Read docs/Budget_Buddy_Backend_Implementation.md and inspect the server, storage module, and Git status. Steps 2-4 are complete: Express works and JSON-file transaction storage is available.
+
+For this step only, add GET /api/transactions and POST /api/transactions. Parse JSON request bodies with Express middleware. GET returns the saved array as JSON. POST validates on the server: type is income or expense, category is non-empty text, amount is a positive finite number, date is valid, and note is optional text. Generate IDs on the server and persist before responding. Return the created record with HTTP 201; use HTTP 400 for invalid input and a generic JSON HTTP 500 response for unexpected storage/server errors. Do not expose paths or stack traces.
+
+Do not connect the frontend, add update/delete routes, authentication, or a database. Test empty GET, valid POST then GET, persistence after restart, and invalid POST. Report changed files and actual results. Do not commit or push.
+```
+
+**Completion check:** GET/POST work with persistent storage and invalid submitted data is rejected with an appropriate response.
 
 ### Step 6: Connect transaction loading and creation
 
-Change the frontend to load transactions from the API and submit new transactions using `fetch()`. Keep rendering, filtering, CSV export, spending chart, budget calculations, and totals working from the loaded transaction array. Handle network and server errors visibly.
+**Copy-paste prompt:**
 
-**Completion check:** A transaction created in the UI is returned by the backend and updates history and dependent dashboard sections only after success.
+```text
+Continue Milestone 2 for Budget Buddy. Read docs/Budget_Buddy_Backend_Implementation.md and inspect the frontend and API. Steps 2-5 are complete: Express serves the app, JSON persistence works, and GET/POST /api/transactions pass their checks.
 
-### Step 7: Add delete route and connect delete action
+For this step only, use fetch() to load transactions from GET /api/transactions when the app starts and submit the existing transaction form as JSON to POST /api/transactions. Treat the server response as the source of truth: do not add a transaction to UI state or reset the form until the request succeeds. Keep history rendering, filters, CSV export, spending chart, budget calculations, totals, and budget-health display working from the API-loaded transaction array.
 
-Implement `DELETE /api/transactions/:id`, persist the removal, and update the existing delete button to call the endpoint and handle its response.
+Follow my Step 1 decision: [PASTE MY STEP 1 CHOICE HERE]. Preserve browser data until any chosen import is confirmed successful; do not silently discard or overwrite it. Leave subscriptions and category budgets on localStorage. Show accessible loading/error feedback and never show false success. Do not implement update/delete yet. Test success and failure through the UI; report results. Do not commit or push.
+```
 
-**Completion check:** Deleting a transaction removes it from the API, history, and totals; deleting an unknown ID returns `404`.
+**Completion check:** The UI loads and creates transactions through Express while existing dependent views continue working and failures are visible.
 
-### Step 8: Add update route and transaction editing
+### Step 7: Add transaction deletion
 
-Implement `PUT /api/transactions/:id` and add a small edit interaction to the transaction UI. Keep the edit form consistent with existing fields and reuse backend validation.
+**Copy-paste prompt:**
 
-**Completion check:** Editing updates the server record and visible totals; invalid edits are rejected; unknown IDs return `404`.
+```text
+Continue Milestone 2 for Budget Buddy. Read docs/Budget_Buddy_Backend_Implementation.md and inspect the transaction API, frontend, and Git status. Steps 2-6 are complete: loading and creation use the API; filters, export, charts, budgets, and totals still work.
+
+For this step only, implement DELETE /api/transactions/:id using the JSON storage module, then connect the existing Delete button with fetch(). Persist removal before returning HTTP 204. Return HTTP 404 for an unknown ID and a generic JSON HTTP 500 response for unexpected errors. Update browser state only after a successful response; show an error if deletion fails. Refresh history and all dependent totals/charts/budget progress after success.
+
+Do not add edit, authentication, a database, or other resource APIs. Test successful deletion, unknown ID, persistence after server restart, and UI updates. Report changed files and results. Do not commit or push.
+```
+
+**Completion check:** Deletion persists and updates the UI only after server confirmation; unknown IDs return 404.
+
+### Step 8: Add transaction updating and an edit UI
+
+**Copy-paste prompt:**
+
+```text
+Continue Milestone 2 for Budget Buddy. Read docs/Budget_Buddy_Backend_Implementation.md and inspect the transaction API, UI, and Git status. Steps 2-7 are complete: create, list, and delete work through Express and JSON-file storage.
+
+For this step only, implement PUT /api/transactions/:id and add a simple, accessible edit interaction for type, category, amount, date, and note. Reuse POST's server-side validation and preserve the server-generated ID. Persist before returning HTTP 200 with the updated JSON record. Return HTTP 400 for invalid data, HTTP 404 for an unknown ID, and a generic JSON HTTP 500 response for unexpected errors. The frontend must use the response and update the UI only after success, with visible failure feedback.
+
+Keep the existing visual style and responsive behavior. After edits, ensure history, CSV export, spending chart, category-budget progress, totals, and budget health reflect the updated record. Do not add unrelated features. Test valid/invalid edits, unknown IDs, persistence after restart, and dependent UI. Report files and results. Do not commit or push.
+```
+
+**Completion check:** Transactions support full CRUD through API and UI, with validation and derived views staying in sync.
 
 ### Step 9: Refine, verify, and document
 
-Test the complete feature, including persistence after restart, validation failures, error responses, filtering, CSV export, dashboard totals, and the old localStorage transition. Update the README and the Browser-Based Application Development Workflow Worksheet with actual implementation details, decisions, and test results. Complete team contribution and submission materials separately as required by the course.
+**Copy-paste prompt:**
 
-**Completion check:** The team can demonstrate one complete frontend-to-Express-to-file-to-frontend feature and explain its limits.
+```text
+Complete the planned Milestone 2 transaction-backend slice for Budget Buddy. Read docs/Budget_Buddy_Backend_Implementation.md, inspect the implementation and Git status, and distinguish completed behavior from planned work.
+
+For this step only, run/refine focused checks for: Express serving the frontend; npm start; GET/POST/PUT/DELETE response behavior; server validation; JSON persistence after restart; 404 for unknown IDs; frontend loading/create/edit/delete/filter/CSV/chart/category-budget/totals/budget-health behavior; visible network/server errors without false success; existing subscription and budget localStorage behavior; and ensuring transaction data is not served as a static file.
+
+Fix only defects in this Milestone 2 slice. Update README.md and this implementation document with actual setup/run commands, structure, API behavior, storage decision, verified tests, and known limits. Update the Browser-Based Application Development Workflow Worksheet only if it exists in the workspace; otherwise report that it is missing and provide facts for the team to enter. Do not claim unverified tests or deliverables are complete. Do not add authentication, a database, payments, or unrelated cleanup. Report results, changed files, risks, and remaining course deliverables. Do not commit or push.
+```
+
+**Completion check:** The complete transaction feature is verified end-to-end, documentation reflects actual behavior, and remaining course deliverables are identified.
 
 ## 10. Testing Checklist
 
