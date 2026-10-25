@@ -3,10 +3,12 @@
 // Simple beginner-level JavaScript (no frameworks)
 // ===================================================
 
-// ---- Load browser-local features from localStorage ----
+// ---- Load account data after the server confirms the signed-in user ----
 let transactions = [];
-let subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
-let categoryBudgets = JSON.parse(localStorage.getItem("categoryBudgets")) || [];
+let subscriptions = [];
+let categoryBudgets = [];
+let currentUser = null;
+let sentReminderStorageKey = "budgetBuddySentRenewalReminders";
 
 const authGate = document.getElementById("authGate");
 const appShell = document.getElementById("appShell");
@@ -17,7 +19,7 @@ const signUpView = document.getElementById("signUpView");
 const signInTab = document.getElementById("signInTab");
 const signUpTab = document.getElementById("signUpTab");
 const signedInUser = document.getElementById("signedInUser");
-const prototypeSessionKey = "budgetBuddyPrototypeUser";
+const authStatus = document.getElementById("authStatus");
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const appPages = document.querySelectorAll(".app-page");
 
@@ -49,11 +51,49 @@ function syncPageFromHash() {
 window.addEventListener("hashchange", syncPageFromHash);
 syncPageFromHash();
 
-function showApp(userName) {
-  signedInUser.textContent = userName;
+function getUserStorageKey(userId, name) {
+  return "budgetBuddyUser." + userId + "." + name;
+}
+
+function loadUserLocalData(user) {
+  currentUser = user;
+  const localDataNames = ["subscriptions", "categoryBudgets"];
+
+  localDataNames.forEach(function (name) {
+    const userKey = getUserStorageKey(user.id, name);
+    const previousData = localStorage.getItem(name);
+    if (previousData !== null) {
+      if (!localStorage.getItem(userKey)) {
+        localStorage.setItem(userKey, previousData);
+      }
+      localStorage.removeItem(name);
+    }
+  });
+
+  subscriptions = JSON.parse(localStorage.getItem(getUserStorageKey(user.id, "subscriptions")) || "[]");
+  categoryBudgets = JSON.parse(localStorage.getItem(getUserStorageKey(user.id, "categoryBudgets")) || "[]");
+  sentReminderStorageKey = getUserStorageKey(user.id, "sentRenewalReminders");
+  const previousSentReminders = localStorage.getItem("budgetBuddySentRenewalReminders");
+  if (previousSentReminders !== null) {
+    if (!localStorage.getItem(sentReminderStorageKey)) {
+      localStorage.setItem(sentReminderStorageKey, previousSentReminders);
+    }
+    localStorage.removeItem("budgetBuddySentRenewalReminders");
+  }
+}
+
+function showApp(user) {
+  loadUserLocalData(user);
+  signedInUser.textContent = user.name;
   authGate.hidden = true;
   appShell.hidden = false;
   syncPageFromHash();
+  renderSubscriptions();
+  renderRenewalReminders();
+  updateNotificationControl();
+  checkRenewalNotifications();
+  updateSummary();
+  loadTransactions();
 }
 
 function setAuthMode(mode) {
@@ -64,6 +104,8 @@ function setAuthMode(mode) {
   signUpTab.classList.toggle("is-active", signingUp);
   signInTab.setAttribute("aria-pressed", String(!signingUp));
   signUpTab.setAttribute("aria-pressed", String(signingUp));
+  authStatus.textContent = "";
+  authStatus.classList.remove("is-error");
 }
 
 document.querySelectorAll("[data-auth-mode]").forEach(function (button) {
@@ -80,28 +122,79 @@ signUpTab.addEventListener("click", function () {
   setAuthMode("signup");
 });
 
-signInForm.addEventListener("submit", function (event) {
+async function sendAuthRequest(path, body) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const result = response.status === 204 ? {} : await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Authentication request failed.");
+  }
+
+  return result;
+}
+
+function setAuthStatus(message, isError) {
+  authStatus.textContent = message;
+  authStatus.classList.toggle("is-error", Boolean(isError));
+}
+
+signInForm.addEventListener("submit", async function (event) {
   event.preventDefault();
-  const identifier = document.getElementById("signInEmail").value.trim();
-  localStorage.setItem(prototypeSessionKey, identifier);
-  showApp(identifier);
-  updateNotificationControl();
-  renderRenewalReminders();
-  checkRenewalNotifications();
+  const email = document.getElementById("signInEmail").value.trim();
+  const password = document.getElementById("signInPassword").value;
+  setAuthStatus("Signing in...", false);
+
+  try {
+    const result = await sendAuthRequest("/api/auth/login", { email: email, password: password });
+    showApp(result.user);
+    signInForm.reset();
+    setAuthStatus("", false);
+  } catch (error) {
+    setAuthStatus(error.message, true);
+  }
 });
 
-signUpForm.addEventListener("submit", function (event) {
+signUpForm.addEventListener("submit", async function (event) {
   event.preventDefault();
   const name = document.getElementById("signUpName").value.trim();
-  localStorage.setItem(prototypeSessionKey, name);
-  showApp(name);
-  updateNotificationControl();
-  renderRenewalReminders();
-  checkRenewalNotifications();
+  const email = document.getElementById("signUpEmail").value.trim();
+  const password = document.getElementById("signUpPassword").value;
+  setAuthStatus("Creating account...", false);
+
+  try {
+    const result = await sendAuthRequest("/api/auth/register", {
+      name: name,
+      email: email,
+      password: password,
+    });
+    showApp(result.user);
+    signUpForm.reset();
+    setAuthStatus("", false);
+  } catch (error) {
+    setAuthStatus(error.message, true);
+  }
 });
 
-document.getElementById("signOutButton").addEventListener("click", function () {
-  localStorage.removeItem(prototypeSessionKey);
+document.getElementById("signOutButton").addEventListener("click", async function () {
+  try {
+    await sendAuthRequest("/api/auth/logout", {});
+  } catch (error) {
+    setTransactionStatus("Could not sign out: " + error.message, true);
+    return;
+  }
+
+  currentUser = null;
+  transactions = [];
+  subscriptions = [];
+  categoryBudgets = [];
+  renderTransactions();
+  renderSubscriptions();
+  renderRenewalReminders();
+  updateSummary();
   appShell.hidden = true;
   authGate.hidden = false;
   signInForm.reset();
@@ -109,9 +202,19 @@ document.getElementById("signOutButton").addEventListener("click", function () {
   setAuthMode("signin");
 });
 
-const savedPrototypeUser = localStorage.getItem(prototypeSessionKey);
-if (savedPrototypeUser) {
-  showApp(savedPrototypeUser);
+async function checkAuthSession() {
+  localStorage.removeItem("budgetBuddyPrototypeUser");
+  try {
+    const response = await fetch("/api/auth/session");
+    const result = await response.json();
+    if (response.ok && result.user) {
+      showApp(result.user);
+    } else if (response.status !== 401) {
+      setAuthStatus(result.error || "Could not check your sign-in status.", true);
+    }
+  } catch (error) {
+    setAuthStatus("Could not connect to the server. Start it and try again.", true);
+  }
 }
 
 // ---- Grab the HTML elements we need to work with ----
@@ -141,18 +244,25 @@ const categoryBudgetForm = document.getElementById("categoryBudgetForm");
 const categoryBudgetList = document.getElementById("categoryBudgetList");
 const categoryBudgetEmpty = document.getElementById("categoryBudgetEmpty");
 const budgetMonthLabel = document.getElementById("budgetMonthLabel");
-const transactionImportKey = "budgetBuddyTransactionImport";
 let transactionsLoaded = false;
+
+function getTransactionImportKey() {
+  return "budgetBuddyTransactionImport_" + currentUser.id;
+}
 
 // ===================================================
 // SAVE TO LOCAL STORAGE
 // ===================================================
 function saveSubscriptions() {
-  localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+  if (currentUser) {
+    localStorage.setItem(getUserStorageKey(currentUser.id, "subscriptions"), JSON.stringify(subscriptions));
+  }
 }
 
 function saveCategoryBudgets() {
-  localStorage.setItem("categoryBudgets", JSON.stringify(categoryBudgets));
+  if (currentUser) {
+    localStorage.setItem(getUserStorageKey(currentUser.id, "categoryBudgets"), JSON.stringify(categoryBudgets));
+  }
 }
 
 function setTransactionStatus(message, isError) {
@@ -193,7 +303,31 @@ async function postServerTransaction(transaction) {
 }
 
 async function importBrowserTransactions(serverTransactions) {
+  const transactionImportKey = getTransactionImportKey();
+  const browserTransactionsJson = localStorage.getItem("transactions");
+  const oldImport = localStorage.getItem("budgetBuddyTransactionImport");
   const savedImport = localStorage.getItem(transactionImportKey);
+  const transactionOwnerKey = "budgetBuddyTransactionOwner";
+  let transactionOwnerId = localStorage.getItem(transactionOwnerKey);
+  const hasBrowserData = browserTransactionsJson !== null || oldImport !== null || savedImport !== null;
+
+  if (!transactionOwnerId && hasBrowserData) {
+    transactionOwnerId = currentUser.id;
+    localStorage.setItem(transactionOwnerKey, transactionOwnerId);
+  }
+  if (transactionOwnerId && transactionOwnerId !== currentUser.id && hasBrowserData) {
+    return {
+      transactions: serverTransactions,
+      message: "Browser transaction data belongs to another account and was left untouched.",
+    };
+  }
+
+  if (oldImport !== null) {
+    if (!savedImport) {
+      localStorage.setItem(transactionImportKey, oldImport);
+    }
+    localStorage.removeItem("budgetBuddyTransactionImport");
+  }
   let importState;
 
   if (savedImport) {
@@ -207,7 +341,6 @@ async function importBrowserTransactions(serverTransactions) {
       throw new Error("The saved browser transaction import status is invalid.");
     }
   } else {
-    const browserTransactionsJson = localStorage.getItem("transactions");
     if (!browserTransactionsJson) {
       return { transactions: serverTransactions, message: "Transactions loaded from the server." };
     }
@@ -272,6 +405,7 @@ async function importBrowserTransactions(serverTransactions) {
 }
 
 async function loadTransactions() {
+  transactionsLoaded = false;
   transactionSubmitButton.disabled = true;
   setTransactionStatus("Loading transactions...", false);
 
@@ -280,6 +414,7 @@ async function loadTransactions() {
     serverTransactions = await getServerTransactions();
   } catch (error) {
     transactions = [];
+    transactionsLoaded = false;
     setTransactionStatus("Could not load transactions: " + error.message, true);
     renderTransactions();
     updateSummary();
@@ -875,7 +1010,7 @@ function checkRenewalNotifications() {
 
   let sentReminders = [];
   try {
-    sentReminders = JSON.parse(localStorage.getItem("budgetBuddySentRenewalReminders")) || [];
+    sentReminders = JSON.parse(localStorage.getItem(sentReminderStorageKey)) || [];
   } catch (error) {
     sentReminders = [];
   }
@@ -901,7 +1036,7 @@ function checkRenewalNotifications() {
   });
 
   if (remindersChanged) {
-    localStorage.setItem("budgetBuddySentRenewalReminders", JSON.stringify(sentReminders));
+    localStorage.setItem(sentReminderStorageKey, JSON.stringify(sentReminders));
   }
 }
 
@@ -1128,4 +1263,4 @@ renderRenewalReminders();
 updateNotificationControl();
 checkRenewalNotifications();
 updateSummary();
-loadTransactions();
+checkAuthSession();

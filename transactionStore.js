@@ -30,7 +30,9 @@ function isValidTransactionRecord(transaction) {
     typeof transaction?.id === "string" &&
     Boolean(transaction.id.trim()) &&
     isValidTransaction(transaction) &&
-    typeof transaction.note === "string"
+    typeof transaction.note === "string" &&
+    (transaction.userId === undefined ||
+      (typeof transaction.userId === "string" && Boolean(transaction.userId.trim())))
   );
 }
 
@@ -60,8 +62,10 @@ async function readTransactions() {
 }
 
 async function writeTransactions(transactions) {
-  if (!Array.isArray(transactions)) {
-    throw new TypeError("Transactions must be an array.");
+  if (!Array.isArray(transactions) || transactions.some(function (transaction) {
+    return !isValidTransactionRecord(transaction);
+  })) {
+    throw new TypeError("Transactions must contain valid transaction records.");
   }
 
   await fs.mkdir(DATA_DIRECTORY, { recursive: true });

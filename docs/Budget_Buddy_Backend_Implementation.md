@@ -6,7 +6,7 @@ This document adapts the Milestone 2 backend reading materials to Budget Buddy. 
 
 The first backend-supported feature will be transaction management. Transactions are already a central feature of Budget Buddy, and the current app already supports adding, listing, filtering, exporting, and deleting them. Adding transaction editing completes CRUD without introducing an unrelated feature.
 
-The implementation remains a local, single-user learning project. Step-by-step prompts are retained below as a record of the intended scope and sequence; Section 13 records the completed implementation and verification.
+The transaction-backend milestone was completed as a local learning project. A later user-requested addition adds basic account sign-in and transaction ownership; it is still not production authentication. Step-by-step prompts are retained below as a record of the original scope and sequence; Sections 13 and 14 describe the completed work.
 
 ## 2. Course Alignment
 
@@ -22,7 +22,7 @@ The supplied Milestone 2 guide establishes these relevant expectations and techn
 - The reading demonstrates JSON-file persistence with Node.js `fs` as a lightweight alternative to a database.
 - Test the behavior and document implementation decisions and progress.
 
-The supplied guide does not require a particular database, prohibit databases, require user accounts, or require that every feature move to the backend. This plan therefore uses a JSON file for the initial feature and does not add a database or real authentication.
+The supplied guide does not require a particular database, prohibit databases, require user accounts, or require that every feature move to the backend. The original transaction slice used JSON-file storage and did not include authentication. The later account feature is an additional user-requested learning increment, not a course requirement.
 
 ## 3. Current Project Findings
 
@@ -33,8 +33,8 @@ The supplied guide does not require a particular database, prohibit databases, r
 - Subscriptions and category budgets remain in browser `localStorage`.
 - Subscription reminders can be edited, but the subscription's name, amount, and billing cycle do not currently have a full edit flow.
 - Category budgets can be created, updated by category, listed, and removed.
-- The sign-in/sign-up screen is a prototype. It accepts non-empty values and does not authenticate users.
-- No real authentication, database, payment integration, or user separation is implemented.
+- Account registration and sign-in use unique email addresses, salted password hashes, and server-side sessions. Transaction routes require a session and scope data by account.
+- Subscriptions and category budgets remain browser-local. No database or payment integration is implemented.
 
 ## 4. Initial Scope
 
@@ -344,3 +344,34 @@ No file named for the Browser-Based Application Development Workflow Worksheet w
 - **Limitations:** local single-user JSON storage has no database transaction or safe concurrent-write guarantees and is not suitable for production financial data.
 
 The team still needs to complete and review the course worksheet and Team Contributions Table and confirm any instructor-specific Milestone 2 submission requirements. No claims are made here about those external deliverables.
+
+## 14. Account Sign-In Follow-Up
+
+This is a later, user-requested learning increment; it is not required by the supplied course guide.
+
+### Implemented
+
+- `authStore.js` stores accounts in `data/users.json`, initializes the file when it is missing, and hashes passwords with Node.js `crypto.scrypt` and a random salt. Passwords and hashes are never returned by the API.
+- Registration requires a name, valid email, and an 8–128 character password. Email matching is case-insensitive. Duplicate emails return `409`; invalid registration returns `400`.
+- Login, current-session lookup, and logout use `/api/auth/login`, `/api/auth/session`, and `/api/auth/logout`. A random opaque session ID is stored in an HTTP-only, `SameSite=Lax` cookie. Sessions are held in memory for up to eight hours; cookies have the `Secure` attribute when `NODE_ENV=production`.
+- All transaction API routes require a valid session. New records include the authenticated account ID; list, update, and delete operate only on that account's records. An unassigned legacy record is left in the JSON file and hidden from all accounts.
+- The sign-in and sign-up forms use the API and display an accessible status/error message. Subscriptions, category budgets, and reminder status remain in browser `localStorage`, namespaced by account ID. Existing unscoped browser copies are moved into the first account that signs in on that browser. A browser transaction copy is reserved for its first importing account; later accounts leave it untouched. Import remains confirmation-based and only runs when that account's API list is empty.
+- `data/users.json` and `data/transactions.json` remain outside `public/` and are ignored by Git.
+
+### Verification performed for this follow-up
+
+- `node --check` passed for `app.js`, `authStore.js`, `transactionStore.js`, and `public/js/main.js`; `git diff --check` passed.
+- An isolated temporary copy of the app was used for HTTP checks, so the existing ignored `data/transactions.json` in the working repository was not changed.
+- Registration validation, case-insensitive duplicate-email rejection, incorrect-password rejection, session lookup, unauthenticated transaction rejection, and safe public user fields were checked.
+- The account cookie's `HttpOnly` and `SameSite=Lax` attributes were checked. Logout returned `204` and the same cookie could no longer access transaction routes.
+- Two accounts were created. Account B could not list, update, or delete account A's transaction; those cross-account ID requests returned `404`. A newly created transaction was assigned to account A.
+- Transaction create/update validation, ID preservation, unknown IDs, and successful deletion were checked. A transaction remained after restarting the isolated server and signing in again; the in-memory session correctly required sign-in after restart.
+- The isolated check confirmed the unassigned legacy record remained unchanged and was not returned to either account. `data/users.json` and `data/transactions.json` were not served as static files; the frontend and health route were available.
+- The frontend HTML, CSS, and JavaScript assets were served successfully and the JavaScript passed syntax checking. A separate interactive browser test of the new forms was not completed.
+
+### Limits and remaining decisions
+
+- This is not production-grade authentication: no HTTPS is configured for local development, rate limiting, email verification, password reset, session persistence across restarts, or account-management workflow is included.
+- JSON files do not safely coordinate concurrent writes or multiple server processes. Accounts and transaction files are local runtime data, not encrypted-at-rest financial storage.
+- Account-specific browser `localStorage` is confined to one browser profile/device. Users should not enter real financial data or reuse an important password.
+- The Browser-Based Application Development Workflow Worksheet was not present in the workspace during the earlier Milestone 2 check. The team still needs to enter the current account and transaction behavior in the course-provided copy, complete the Team Contributions Table, and confirm instructor-specific submission requirements.

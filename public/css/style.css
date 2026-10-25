@@ -290,6 +290,17 @@ body {
   text-align: center;
 }
 
+.auth-status {
+  min-height: 20px;
+  margin: 12px 0;
+  color: #68716a;
+  font-size: 13px;
+}
+
+.auth-status.is-error {
+  color: #a12622;
+}
+
 .account-actions {
   display: flex;
   align-items: center;
