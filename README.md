@@ -42,14 +42,14 @@ A simple browser-based personal finance and subscription tracker. Users can log 
 
 ```
 budget-buddy/
-├── index.html          # Authentication and hash-routed app views
+├── public/
+│   ├── index.html      # Authentication and hash-routed app views
+│   ├── css/
+│   │   └── style.css   # Authentication, navigation, and app styling
+│   └── js/
+│       └── main.js     # Authentication prototype, routing, and tracker logic
 ├── img/                # Screenshots shown in this README
-│
-├── css/
-│   └── style.css       # Authentication, navigation, and app styling
-│
-├── js/
-│   └── main.js         # Authentication prototype, routing, and tracker logic
+└── docs/
 ```
 
 The app uses one HTML document with separate hash-routed views for Dashboard, Add Transaction, Subscriptions, and History. The page links its CSS and JavaScript like this:
@@ -57,6 +57,7 @@ The app uses one HTML document with separate hash-routed views for Dashboard, Ad
 <link rel="stylesheet" href="css/style.css">
 <script src="js/main.js"></script>
 ```
+These paths are relative to `public/index.html`.
 
 ---
 
@@ -65,14 +66,14 @@ The app uses one HTML document with separate hash-routed views for Dashboard, Ad
 No installs needed. Pick one:
 
 **Option A — Just open it**
-Double-click `index.html` and it opens in your browser.
+Double-click `public/index.html` and it opens in your browser.
 
 **Option B — VS Code Live Server (recommended)**
-Install the "Live Server" extension → right-click `index.html` → "Open with Live Server."
+Install the "Live Server" extension → right-click `public/index.html` → "Open with Live Server."
 
 **Option C — Terminal**
 ```bash
-npx http-server .
+npx http-server public
 ```
 Then open the local URL it prints.
 
