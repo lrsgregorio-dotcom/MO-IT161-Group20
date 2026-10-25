@@ -905,8 +905,64 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 10px;
   border-bottom: 1px solid #eee;
+}
+
+.transaction-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-button {
+  padding: 4px 10px;
+  border: 1px solid #285449;
+  border-radius: 5px;
+  background: transparent;
+  color: #285449;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.edit-button:hover {
+  background: #285449;
+  color: #fff;
+}
+
+.transaction-editor {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  align-items: end;
+  gap: 10px;
+  padding: 12px 0 4px;
+}
+
+.transaction-editor[hidden] {
+  display: none;
+}
+
+.transaction-editor label {
+  display: grid;
+  gap: 4px;
+  color: #48534c;
+  font-size: 13px;
+}
+
+.transaction-editor input,
+.transaction-editor select {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid #cfd5cd;
+  border-radius: 4px;
+  background: #fff;
+  color: #222;
+  font: inherit;
 }
 
 .renewal-reminders {

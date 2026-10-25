@@ -541,8 +541,116 @@ function renderTransactions() {
       }
     });
 
-    actions.append(amount, deleteButton);
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "edit-button";
+    editButton.textContent = "Edit";
+    editButton.setAttribute("aria-expanded", "false");
+
+    const editor = document.createElement("form");
+    editor.className = "transaction-editor";
+    editor.hidden = true;
+
+    const typeLabel = document.createElement("label");
+    typeLabel.textContent = "Type";
+    const typeInput = document.createElement("select");
+    [["income", "Income"], ["expense", "Expense"]].forEach(function (optionData) {
+      const option = document.createElement("option");
+      option.value = optionData[0];
+      option.textContent = optionData[1];
+      typeInput.appendChild(option);
+    });
+    typeInput.value = item.type;
+    typeLabel.appendChild(typeInput);
+
+    const categoryLabel = document.createElement("label");
+    categoryLabel.textContent = "Category";
+    const categoryInput = document.createElement("input");
+    categoryInput.type = "text";
+    categoryInput.required = true;
+    categoryInput.value = item.category;
+    categoryLabel.appendChild(categoryInput);
+
+    const amountLabel = document.createElement("label");
+    amountLabel.textContent = "Amount (₱)";
+    const amountInput = document.createElement("input");
+    amountInput.type = "number";
+    amountInput.min = "0.01";
+    amountInput.step = "0.01";
+    amountInput.required = true;
+    amountInput.value = String(item.amount);
+    amountLabel.appendChild(amountInput);
+
+    const dateLabel = document.createElement("label");
+    dateLabel.textContent = "Date";
+    const dateInput = document.createElement("input");
+    dateInput.type = "date";
+    dateInput.required = true;
+    dateInput.value = item.date;
+    dateLabel.appendChild(dateInput);
+
+    const noteLabel = document.createElement("label");
+    noteLabel.textContent = "Note";
+    const noteInput = document.createElement("input");
+    noteInput.type = "text";
+    noteInput.value = item.note || "";
+    noteLabel.appendChild(noteInput);
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "submit";
+    saveButton.className = "btn-primary";
+    saveButton.textContent = "Save changes";
+
+    editor.append(typeLabel, categoryLabel, amountLabel, dateLabel, noteLabel, saveButton);
+    editor.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      saveButton.disabled = true;
+      setTransactionStatus("Saving transaction changes...", false);
+
+      try {
+        const response = await fetch("/api/transactions/" + encodeURIComponent(item.id), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: typeInput.value,
+            category: categoryInput.value.trim(),
+            amount: Number(amountInput.value),
+            date: dateInput.value,
+            note: noteInput.value.trim(),
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "The server could not update the transaction.");
+        }
+        if (!result || result.id !== item.id) {
+          throw new Error("The server returned an invalid transaction.");
+        }
+
+        transactions = transactions.map(function (transaction) {
+          return transaction.id === item.id ? result : transaction;
+        });
+        renderTransactions();
+        updateSummary();
+        setTransactionStatus("Transaction updated.", false);
+      } catch (error) {
+        saveButton.disabled = false;
+        setTransactionStatus("Could not update transaction: " + error.message, true);
+      }
+    });
+
+    editButton.addEventListener("click", function () {
+      editor.hidden = !editor.hidden;
+      editButton.setAttribute("aria-expanded", String(!editor.hidden));
+      if (!editor.hidden) typeInput.focus();
+    });
+
+    const buttons = document.createElement("div");
+    buttons.className = "transaction-actions";
+    buttons.append(editButton, deleteButton);
+    actions.append(amount, buttons);
     li.append(info, actions);
+    li.appendChild(editor);
     transactionList.appendChild(li);
   });
 }
