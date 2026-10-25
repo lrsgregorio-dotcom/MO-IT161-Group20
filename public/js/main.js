@@ -3,8 +3,8 @@
 // Simple beginner-level JavaScript (no frameworks)
 // ===================================================
 
-// ---- Load saved data from localStorage, or start with empty lists ----
-let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+// ---- Load browser-local features from localStorage ----
+let transactions = [];
 let subscriptions = JSON.parse(localStorage.getItem("subscriptions")) || [];
 let categoryBudgets = JSON.parse(localStorage.getItem("categoryBudgets")) || [];
 
@@ -117,6 +117,8 @@ if (savedPrototypeUser) {
 // ---- Grab the HTML elements we need to work with ----
 const transactionForm = document.getElementById("transactionForm");
 const transactionList = document.getElementById("transactionList");
+const transactionStatus = document.getElementById("transactionStatus");
+const transactionSubmitButton = transactionForm.querySelector('button[type="submit"]');
 const filterType = document.getElementById("filterType");
 const exportTransactionsButton = document.getElementById("exportTransactionsButton");
 const exportStatus = document.getElementById("exportStatus");
@@ -139,14 +141,12 @@ const categoryBudgetForm = document.getElementById("categoryBudgetForm");
 const categoryBudgetList = document.getElementById("categoryBudgetList");
 const categoryBudgetEmpty = document.getElementById("categoryBudgetEmpty");
 const budgetMonthLabel = document.getElementById("budgetMonthLabel");
+const transactionImportKey = "budgetBuddyTransactionImport";
+let transactionsLoaded = false;
 
 // ===================================================
 // SAVE TO LOCAL STORAGE
 // ===================================================
-function saveTransactions() {
-  localStorage.setItem("transactions", JSON.stringify(transactions));
-}
-
 function saveSubscriptions() {
   localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
 }
@@ -155,10 +155,159 @@ function saveCategoryBudgets() {
   localStorage.setItem("categoryBudgets", JSON.stringify(categoryBudgets));
 }
 
+function setTransactionStatus(message, isError) {
+  transactionStatus.textContent = message;
+  transactionStatus.classList.toggle("is-error", Boolean(isError));
+}
+
+async function getServerTransactions() {
+  const response = await fetch("/api/transactions");
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Could not load transactions from the server.");
+  }
+  if (!Array.isArray(result)) {
+    throw new Error("The server returned an invalid transaction list.");
+  }
+
+  return result;
+}
+
+async function postServerTransaction(transaction) {
+  const response = await fetch("/api/transactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(transaction),
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "The server could not save the transaction.");
+  }
+  if (!result || typeof result.id !== "string") {
+    throw new Error("The server returned an invalid transaction.");
+  }
+
+  return result;
+}
+
+async function importBrowserTransactions(serverTransactions) {
+  const savedImport = localStorage.getItem(transactionImportKey);
+  let importState;
+
+  if (savedImport) {
+    importState = JSON.parse(savedImport);
+    if (
+      !importState ||
+      typeof importState.sourceJson !== "string" ||
+      !Number.isInteger(importState.nextIndex) ||
+      importState.nextIndex < 0
+    ) {
+      throw new Error("The saved browser transaction import status is invalid.");
+    }
+  } else {
+    const browserTransactionsJson = localStorage.getItem("transactions");
+    if (!browserTransactionsJson) {
+      return { transactions: serverTransactions, message: "Transactions loaded from the server." };
+    }
+    if (serverTransactions.length > 0) {
+      return {
+        transactions: serverTransactions,
+        message: "The server already has transactions. Browser transactions were left untouched to avoid duplicates.",
+      };
+    }
+
+    const browserTransactions = JSON.parse(browserTransactionsJson);
+    if (!Array.isArray(browserTransactions)) {
+      throw new Error("Browser transaction data is not a list. It was left untouched.");
+    }
+    if (browserTransactions.length === 0) {
+      return { transactions: serverTransactions, message: "Transactions loaded from the server." };
+    }
+
+    importState = { sourceJson: browserTransactionsJson, nextIndex: 0 };
+    localStorage.setItem(transactionImportKey, JSON.stringify(importState));
+  }
+
+  const browserTransactions = JSON.parse(importState.sourceJson);
+  if (
+    !Array.isArray(browserTransactions) ||
+    importState.nextIndex > browserTransactions.length ||
+    serverTransactions.length < importState.nextIndex
+  ) {
+    throw new Error("The saved browser transaction import could not be resumed safely.");
+  }
+
+  while (importState.nextIndex < browserTransactions.length) {
+    const item = browserTransactions[importState.nextIndex];
+    const importedTransaction = await postServerTransaction({
+      type: item.type,
+      category: item.category,
+      amount: item.amount,
+      date: item.date,
+      note: item.note || "",
+    });
+
+    serverTransactions.push(importedTransaction);
+    importState.nextIndex += 1;
+    localStorage.setItem(transactionImportKey, JSON.stringify(importState));
+  }
+
+  const confirmedTransactions = await getServerTransactions();
+  if (confirmedTransactions.length < browserTransactions.length) {
+    throw new Error("The server did not confirm all browser transactions.");
+  }
+
+  if (localStorage.getItem("transactions") === importState.sourceJson) {
+    localStorage.removeItem("transactions");
+  }
+  localStorage.removeItem(transactionImportKey);
+
+  return {
+    transactions: confirmedTransactions,
+    message: "Imported " + browserTransactions.length +
+      (browserTransactions.length === 1 ? " browser transaction to the server." : " browser transactions to the server."),
+  };
+}
+
+async function loadTransactions() {
+  transactionSubmitButton.disabled = true;
+  setTransactionStatus("Loading transactions...", false);
+
+  let serverTransactions;
+  try {
+    serverTransactions = await getServerTransactions();
+  } catch (error) {
+    transactions = [];
+    setTransactionStatus("Could not load transactions: " + error.message, true);
+    renderTransactions();
+    updateSummary();
+    return;
+  }
+
+  transactionsLoaded = true;
+  try {
+    const result = await importBrowserTransactions(serverTransactions);
+    transactions = result.transactions;
+    setTransactionStatus(result.message, false);
+  } catch (error) {
+    transactions = serverTransactions;
+    setTransactionStatus(
+      "Transactions loaded, but browser import did not finish. The browser copy was kept. " + error.message,
+      true
+    );
+  }
+
+  transactionSubmitButton.disabled = false;
+  renderTransactions();
+  updateSummary();
+}
+
 // ===================================================
 // ADD A TRANSACTION
 // ===================================================
-transactionForm.addEventListener("submit", function (event) {
+transactionForm.addEventListener("submit", async function (event) {
   event.preventDefault(); // stop the page from reloading
 
   const type = document.getElementById("transactionType").value;
@@ -167,27 +316,33 @@ transactionForm.addEventListener("submit", function (event) {
   const date = document.getElementById("transactionDate").value;
   const note = document.getElementById("transactionNote").value.trim();
 
-  // simple check so we don't save broken/empty entries
-  if (!category || !amount || amount <= 0 || !date) {
-    alert("Please fill out category, amount, and date correctly.");
+  if (!transactionsLoaded || !category || !Number.isFinite(amount) || amount <= 0 || !date) {
+    setTransactionStatus("Please enter a category, positive amount, and valid date.", true);
     return;
   }
 
-  const newTransaction = {
-    id: Date.now(), // simple unique id using the current timestamp
-    type: type,
-    category: category,
-    amount: amount,
-    date: date,
-    note: note,
-  };
+  transactionSubmitButton.disabled = true;
+  setTransactionStatus("Saving transaction...", false);
 
-  transactions.push(newTransaction);
-  saveTransactions();
+  try {
+    const savedTransaction = await postServerTransaction({
+      type: type,
+      category: category,
+      amount: amount,
+      date: date,
+      note: note,
+    });
 
-  transactionForm.reset();
-  renderTransactions();
-  updateSummary();
+    transactions.push(savedTransaction);
+    transactionForm.reset();
+    renderTransactions();
+    updateSummary();
+    setTransactionStatus("Transaction saved.", false);
+  } catch (error) {
+    setTransactionStatus("Could not save transaction: " + error.message, true);
+  } finally {
+    transactionSubmitButton.disabled = false;
+  }
 });
 
 // ===================================================
@@ -339,36 +494,34 @@ function renderTransactions() {
     : "";
 
   filteredTransactions.forEach(function (item) {
-      const li = document.createElement("li");
+    const li = document.createElement("li");
+    const info = document.createElement("div");
+    info.className = "item-info";
 
-      const colorClass = item.type === "income" ? "income-color" : "expense-color";
-      const sign = item.type === "income" ? "+" : "-";
+    const title = document.createElement("span");
+    title.className = "item-title";
+    title.textContent = item.category;
 
-      li.innerHTML = `
-        <div class="item-info">
-          <span class="item-title">${item.category}</span>
-          <span class="item-sub">${item.date}${item.note ? " • " + item.note : ""}</span>
-        </div>
-        <div>
-          <span class="item-amount ${colorClass}">${sign}₱${item.amount.toFixed(2)}</span>
-          <button class="delete-btn" data-id="${item.id}">Delete</button>
-        </div>
-      `;
+    const details = document.createElement("span");
+    details.className = "item-sub";
+    details.textContent = item.date + (item.note ? " • " + item.note : "");
+    info.append(title, details);
 
-      transactionList.appendChild(li);
-  });
+    const actions = document.createElement("div");
+    const amount = document.createElement("span");
+    amount.className = "item-amount " + (item.type === "income" ? "income-color" : "expense-color");
+    amount.textContent = (item.type === "income" ? "+" : "-") + "₱" + item.amount.toFixed(2);
 
-  // hook up the delete buttons we just created
-  document.querySelectorAll("#transactionList .delete-btn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      const idToDelete = Number(btn.getAttribute("data-id"));
-      transactions = transactions.filter(function (item) {
-        return item.id !== idToDelete;
-      });
-      saveTransactions();
-      renderTransactions();
-      updateSummary();
-    });
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-btn";
+    deleteButton.textContent = "Delete";
+    deleteButton.disabled = true;
+    deleteButton.title = "Transaction deletion will be available in the next step";
+
+    actions.append(amount, deleteButton);
+    li.append(info, actions);
+    transactionList.appendChild(li);
   });
 }
 
@@ -838,9 +991,11 @@ function updateHealthBadge(totalIncome, balance) {
 // ===================================================
 // RUN ON PAGE LOAD
 // ===================================================
+transactionSubmitButton.disabled = true;
 renderTransactions();
 renderSubscriptions();
 renderRenewalReminders();
 updateNotificationControl();
 checkRenewalNotifications();
 updateSummary();
+loadTransactions();

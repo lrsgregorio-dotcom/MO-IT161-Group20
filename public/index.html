@@ -99,6 +99,7 @@
   </header>
 
   <main id="appMain" class="app-main">
+    <p id="transactionStatus" class="transaction-status" role="status" aria-live="polite">Loading transactions...</p>
 
     <!-- Dashboard: shows totals and the budget health indicator -->
     <section id="dashboard" class="dashboard app-page" aria-labelledby="dashboardTitle">
@@ -211,7 +212,7 @@
           <input type="text" id="transactionNote" placeholder="Short note">
         </div>
 
-        <button type="submit" class="btn-primary">Add Transaction</button>
+        <button type="submit" class="btn-primary" disabled>Add Transaction</button>
       </form>
     </section>
 

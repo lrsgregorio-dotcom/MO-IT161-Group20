@@ -3,7 +3,7 @@
 
 A simple browser-based personal finance and subscription tracker. Users can log income and expenses, manage recurring subscriptions, filter their transaction history, and see a real-time budget health indicator.
 
-**Current phase:** Static front-end prototype (HTML, CSS, JavaScript). App data and the demo sign-in session are saved in the browser using `localStorage` — no backend/server needed.
+**Current phase:** Milestone 2 is in progress. Express serves the app and stores transactions in a JSON file. Subscriptions, budgets, and the prototype sign-in session still use browser `localStorage`.
 
 ---
 
@@ -34,7 +34,9 @@ A simple browser-based personal finance and subscription tracker. Users can log 
 - HTML
 - CSS
 - JavaScript (vanilla, no frameworks)
-- Browser localStorage (for saving data)
+- Node.js and Express
+- JSON-file transaction storage
+- Browser localStorage (subscriptions, budgets, and prototype sign-in)
 
 ---
 
@@ -42,6 +44,8 @@ A simple browser-based personal finance and subscription tracker. Users can log 
 
 ```
 budget-buddy/
+├── app.js              # Express server and transaction routes
+├── package.json        # Project scripts and dependencies
 ├── public/
 │   ├── index.html      # Authentication and hash-routed app views
 │   ├── css/
@@ -49,6 +53,8 @@ budget-buddy/
 │   └── js/
 │       └── main.js     # Authentication prototype, routing, and tracker logic
 ├── img/                # Screenshots shown in this README
+├── data/
+│   └── transactions.json  # Created by the server; ignored by Git
 └── docs/
 ```
 
@@ -63,19 +69,12 @@ These paths are relative to `public/index.html`.
 
 ## How to Run It
 
-No installs needed. Pick one:
-
-**Option A — Just open it**
-Double-click `public/index.html` and it opens in your browser.
-
-**Option B — VS Code Live Server (recommended)**
-Install the "Live Server" extension → right-click `public/index.html` → "Open with Live Server."
-
-**Option C — Terminal**
+Install the project dependencies, then start the Express server from the project root:
 ```bash
-npx http-server public
+npm install
+npm start
 ```
-Then open the local URL it prints.
+Open the local URL printed by the server (by default, `http://localhost:3000`).
 
 ---
 
@@ -88,7 +87,8 @@ Then open the local URL it prints.
 | View upcoming renewals and optionally receive browser notifications | Renewal Reminders on the Subscriptions page |
 | Filter transactions (All / Income / Expenses) | Dropdown above transaction history |
 | Export all or filtered transaction history as a spreadsheet-friendly CSV | Export CSV button on History |
-| Delete a transaction or subscription | Delete button on each list item |
+| Delete a subscription | Delete button on each subscription |
+| Delete a transaction | Planned for the next backend step; currently unavailable |
 | Live totals (income, expenses, balance, subscriptions) | Dashboard cards |
 | Budget health indicator (Good / Warning / Over Budget) | Badge below the dashboard cards |
 | Monthly spending limits by category with progress, remaining, and over-budget amounts | Dashboard category budgets |
@@ -111,7 +111,8 @@ Then open the local URL it prints.
 
 ## Notes
 
-- All data is stored only in the current browser (`localStorage`). Clearing browser data will erase transactions and subscriptions.
+- Transactions are stored by the server in `data/transactions.json`. The file is created when transactions are first requested and is ignored by Git.
+- Subscriptions, category budgets, and the prototype sign-in session are stored in the current browser (`localStorage`).
 - Authentication is for prototype demonstration only. There is no backend, credential validation, or secure account system; do not enter real passwords.
 - Subscription reminder dates are stored locally. Browser notifications require permission and work only while Budget Buddy is open in a supported secure browser context; upcoming dates remain listed in the app.
-- This is Milestone 1 of the project — charts and real payment integration are not included yet. See the Implementation Plan for planned future improvements.
+- This is a local learning implementation. The JSON-file backend is single-user and is not suitable for real financial information or public deployment.

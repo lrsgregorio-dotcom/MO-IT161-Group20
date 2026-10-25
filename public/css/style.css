@@ -468,6 +468,16 @@ body {
   padding: 34px 20px 20px;
 }
 
+.transaction-status {
+  margin-bottom: 14px;
+  color: #52615a;
+  font-size: 14px;
+}
+
+.transaction-status.is-error {
+  color: #a12622;
+}
+
 .title {
   margin-bottom: 8px;
   color: #173b38;
