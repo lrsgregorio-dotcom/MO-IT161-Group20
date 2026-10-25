@@ -2,32 +2,12 @@ const express = require("express");
 const path = require("path");
 const { randomUUID } = require("crypto");
 const transactionStore = require("./transactionStore");
+const { isValidTransaction } = transactionStore;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-
-function isValidTransaction(transaction) {
-  const validDate = typeof transaction?.date === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(transaction.date) &&
-    !Number.isNaN(Date.parse(transaction.date)) &&
-    new Date(transaction.date).toISOString().slice(0, 10) === transaction.date;
-
-  return (
-    transaction &&
-    typeof transaction === "object" &&
-    !Array.isArray(transaction) &&
-    ["income", "expense"].includes(transaction.type) &&
-    typeof transaction.category === "string" &&
-    Boolean(transaction.category.trim()) &&
-    typeof transaction.amount === "number" &&
-    Number.isFinite(transaction.amount) &&
-    transaction.amount > 0 &&
-    validDate &&
-    (transaction.note === undefined || typeof transaction.note === "string")
-  );
-}
 
 function createTransactionRecord(transaction, id) {
   return {

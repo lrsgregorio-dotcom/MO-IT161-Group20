@@ -4,6 +4,36 @@ const path = require("path");
 const DATA_DIRECTORY = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIRECTORY, "transactions.json");
 
+function isValidTransaction(transaction) {
+  const validDate = typeof transaction?.date === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(transaction.date) &&
+    !Number.isNaN(Date.parse(transaction.date)) &&
+    new Date(transaction.date).toISOString().slice(0, 10) === transaction.date;
+
+  return (
+    transaction &&
+    typeof transaction === "object" &&
+    !Array.isArray(transaction) &&
+    ["income", "expense"].includes(transaction.type) &&
+    typeof transaction.category === "string" &&
+    Boolean(transaction.category.trim()) &&
+    typeof transaction.amount === "number" &&
+    Number.isFinite(transaction.amount) &&
+    transaction.amount > 0 &&
+    validDate &&
+    (transaction.note === undefined || typeof transaction.note === "string")
+  );
+}
+
+function isValidTransactionRecord(transaction) {
+  return (
+    typeof transaction?.id === "string" &&
+    Boolean(transaction.id.trim()) &&
+    isValidTransaction(transaction) &&
+    typeof transaction.note === "string"
+  );
+}
+
 async function readTransactions() {
   let fileContents;
 
@@ -20,8 +50,10 @@ async function readTransactions() {
   }
 
   const transactions = JSON.parse(fileContents);
-  if (!Array.isArray(transactions)) {
-    throw new Error("Transaction data must be a JSON array.");
+  if (!Array.isArray(transactions) || transactions.some(function (transaction) {
+    return !isValidTransactionRecord(transaction);
+  })) {
+    throw new Error("Transaction data contains invalid records.");
   }
 
   return transactions;
@@ -37,6 +69,7 @@ async function writeTransactions(transactions) {
 }
 
 module.exports = {
+  isValidTransaction,
   readTransactions,
   writeTransactions,
 };

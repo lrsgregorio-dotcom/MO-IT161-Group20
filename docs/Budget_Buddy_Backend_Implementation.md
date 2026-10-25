@@ -2,11 +2,11 @@
 
 ## 1. Purpose
 
-This document adapts the Milestone 2 backend reading materials to Budget Buddy. It proposes a gradual, course-aligned implementation that demonstrates an Express.js server, frontend/backend communication with `fetch()`, JSON responses, and persistent file storage using Node.js `fs`.
+This document adapts the Milestone 2 backend reading materials to Budget Buddy. The planned transaction-backend slice is now implemented: Express serves the frontend, the browser communicates with `fetch()`, and transaction data persists in a JSON file using Node.js `fs`.
 
 The first backend-supported feature will be transaction management. Transactions are already a central feature of Budget Buddy, and the current app already supports adding, listing, filtering, exporting, and deleting them. Adding transaction editing completes CRUD without introducing an unrelated feature.
 
-This is an implementation plan, not a claim that any backend code has already been written.
+The implementation remains a local, single-user learning project. Step-by-step prompts are retained below as a record of the intended scope and sequence; Section 13 records the completed implementation and verification.
 
 ## 2. Course Alignment
 
@@ -26,13 +26,15 @@ The supplied guide does not require a particular database, prohibit databases, r
 
 ## 3. Current Project Findings
 
-- The frontend is one hash-routed `index.html` page with vanilla JavaScript and CSS.
-- `js/main.js` currently keeps transactions, subscriptions, and category budgets in browser `localStorage`.
-- Transactions support create, read/list, filtering, export, and delete. There is no transaction edit UI yet.
+- The frontend is one hash-routed `public/index.html` page with vanilla JavaScript in `public/js/main.js` and CSS in `public/css/style.css`.
+- Express serves `public/` from `app.js`; `npm start` runs the server on port 3000 by default, with `PORT` available as an override.
+- Transactions use `GET`, `POST`, `PUT`, and `DELETE` API routes and persist in `data/transactions.json` through `transactionStore.js`.
+- Transaction history, filtering, CSV export, charts, category-budget calculations, totals, budget health, create, edit, and delete use API-loaded transaction data.
+- Subscriptions and category budgets remain in browser `localStorage`.
 - Subscription reminders can be edited, but the subscription's name, amount, and billing cycle do not currently have a full edit flow.
 - Category budgets can be created, updated by category, listed, and removed.
 - The sign-in/sign-up screen is a prototype. It accepts non-empty values and does not authenticate users.
-- The project has no Express server or Node package setup yet.
+- No real authentication, database, payment integration, or user separation is implemented.
 
 ## 4. Initial Scope
 
@@ -63,6 +65,7 @@ Subscriptions and budgets can be moved to the backend in later increments if the
 ```text
 MO-IT161-Group20/
 ├── app.js
+├── transactionStore.js
 ├── package.json
 ├── package-lock.json
 ├── .gitignore
@@ -82,6 +85,8 @@ MO-IT161-Group20/
 ```
 
 `public/` contains files the browser is allowed to request. Keep `data/transactions.json` outside `public/` so it is accessed only by the server and not exposed as a static file. Keep `img/` at the project root because the current README references those screenshots.
+
+Install dependencies with `npm install`, then start the server from the repository root with `npm start`. The default URL is `http://localhost:3000`; set `PORT` to override it. The storage module creates `data/transactions.json` containing `[]` when the file is missing. The runtime data file is ignored by Git.
 
 The course example uses `app.js`; the plan follows that name. The initial implementation can keep the beginner-sized routes in `app.js`. If the file becomes difficult to follow, routes can be extracted into a module in a separate later change.
 
@@ -138,14 +143,14 @@ The edit UI sends `PUT` with the changed fields. The delete action sends `DELETE
 
 - Initialize `data/transactions.json` with an empty JSON array (`[]`).
 - Use Node.js file APIs (`fs` / `fs/promises`) to read and write JSON records.
-- Parse and validate file contents before using them; handle a missing file through an intentional initialization path.
+- Parse the file and validate that it contains an array of valid transaction records before using it; handle a missing file through an intentional initialization path.
 - Persist changes for create, update, and delete before returning a success response.
 - Keep the data file out of `public/` and exclude generated runtime data from version control if that matches the team submission requirements. If the course requires sample data to be submitted, use a separate clearly identified sample file rather than committing private user data.
 - Treat this as a local, single-user learning implementation. A JSON file does not provide database transactions or safe multi-user concurrent writes and is not a production storage design.
 
 ## 9. Gradual Work and Commit Boundaries
 
-Use the prompts below one at a time, in order. Each prompt is self-contained for use in a new chat in this same workspace. Review and verify each result before moving on, then make your own commit and push. Do not ask Copilot to commit or push.
+The prompts below record the intended sequence. Steps 2-9 have been completed and verified to the extent described in Section 13. Review and commit changes in the team's normal workflow; do not include private transaction data.
 
 ### Step 1: Confirm setup and transaction-data decision
 
@@ -292,10 +297,50 @@ Fix only defects in this Milestone 2 slice. Update README.md and this implementa
 - **No real authentication in this phase:** The existing sign-in/sign-up interface is a prototype and does not protect the API. It must not be presented as secure authentication. The JSON-backed backend is a local learning feature, not suitable for real personal financial information or public deployment.
 - **Single-user data:** Without authentication and per-user authorization, all API users of the local server share the same transaction file.
 - **Partial backend migration:** Subscriptions and category budgets remain in localStorage during the first slice. This is intentional and should be documented in the README.
-- **Existing local data:** Decide whether to begin with a fresh backend file, manually re-enter data, or implement a one-time import. Preserve browser data until that decision is made.
+- **Existing local data:** The selected policy is a one-time import when the backend is empty. Keep the browser copy until the imported records are confirmed by the server; if the backend already contains records, keep the browser copy and avoid automatic duplicate imports.
 - **File storage limits:** JSON-file persistence is suitable for demonstrating the course concepts but has limitations for concurrent requests, multiple users, and deployment.
 - **Future increments:** If required or approved later, subscriptions and category budgets can use the same route/request/response/persistence pattern. Authentication, production database storage, and server-scheduled reminders require separate scope decisions.
 
 ## 12. Documentation and Team Deliverables
 
-As implementation proceeds, record the actual commands, route behavior, storage decisions, test results, and known limitations in the README and course workflow worksheet. Do not describe planned work as completed. Review the implementation with the team, complete the Team Contributions Table, and prepare the Milestone 2 submission according to the instructor's checklist.
+Record the actual commands, route behavior, storage decisions, test results, and known limitations in the README and course workflow worksheet. Do not describe planned work as completed. Review the implementation with the team, complete the Team Contributions Table, and prepare the Milestone 2 submission according to the instructor's checklist.
+
+## 13. Completed Milestone 2 Slice and Verification
+
+### Implemented
+
+- `npm install` installs the dependencies; `npm start` serves `public/` from Express at `http://localhost:3000` by default. Set `PORT` to override the port.
+- `GET /api/health` returns JSON. Transaction routes implement list (`GET`), create (`POST`), update (`PUT`), and delete (`DELETE`) using `data/transactions.json` through `transactionStore.js`.
+- The missing transaction file is created with `[]`. Reads reject malformed JSON, non-array contents, and records that do not have a valid ID, type, category, amount, date, and note. Storage and request errors return a generic JSON `500` response; details are not sent to the browser.
+- POST and PUT validate submitted fields on the server. POST returns `201`; PUT returns `200` and preserves the existing ID; invalid fields return `400`; unknown update/delete IDs return `404`; successful DELETE returns `204`.
+- The browser loads and changes transactions through the API. Its history, filter, CSV export, spending chart, budget progress, dashboard totals, and budget health use the server-loaded transaction list. Loading and write failures are announced; the UI changes only after a successful response.
+- Existing browser transactions are imported once only when the backend is empty. The browser copy is retained until all imported records have been confirmed by a subsequent server read. An interrupted import can be retried; if the backend already contains transactions, the browser copy is retained to avoid duplicates.
+- Subscriptions and category budgets remain in browser `localStorage`. The prototype sign-in screen is unchanged and is not real authentication.
+- `data/transactions.json` is outside `public/` and ignored by Git. `README.md` has the install/run instructions, feature status, API summary, data decision, and limitations.
+
+### Verification performed
+
+Manual HTTP checks used the locally running `npm start` server and disposable data:
+
+- The home page, CSS, JavaScript, and `/api/health` returned HTTP `200`; `/data/transactions.json` was not served and returned `404`.
+- Empty GET returned an empty JSON array. POST returned `201` with a server-generated ID. Invalid type, blank category, non-positive amount, invalid date, and non-string note were rejected with `400`.
+- PUT returned `200`, changed the record, preserved its ID, and rejected invalid fields with `400`. Unknown PUT and DELETE IDs returned `404`; successful DELETE returned `204`.
+- Malformed request JSON returned `400`. Malformed stored JSON returned a generic JSON `500` without exposing the storage path.
+- Created, updated, and deleted data was checked across a server restart.
+- Browser checks covered transaction load/create/edit/delete, income/expense filtering, CSV-export status, and recalculation of totals, budget health, spending chart, and category-budget progress after edits and deletes. Simulated failures for GET, POST, PUT, and DELETE showed errors without false success or premature state changes.
+- Browser checks confirmed subscriptions and category budgets continued to load and save through `localStorage`. The one-time import and retry behavior were also exercised during Step 6.
+- `node --check` passed for the server and browser JavaScript, and `git diff --check` passed. There is no automated test script in `package.json`; these are focused manual checks, not a full automated suite.
+
+### Worksheet and remaining work
+
+No file named for the Browser-Based Application Development Workflow Worksheet was found in the workspace. Facts for the team to enter in the course-provided worksheet:
+
+- **Application:** Budget Buddy; Milestone 2 transaction-backend slice.
+- **Stack:** Node.js, Express, vanilla HTML/CSS/JavaScript, `fetch()`, JSON request/response, Node `fs/promises`.
+- **Run:** `npm install`, then `npm start`; default URL `http://localhost:3000`, optional `PORT` override.
+- **Persistence:** `data/transactions.json`, created as `[]` when absent; runtime transaction data is Git-ignored. Existing browser transactions are imported once only when the backend is empty.
+- **API:** `GET /api/health`; `GET`, `POST`, `PUT`, and `DELETE /api/transactions` (update/delete use `/:id`).
+- **Still local/prototype:** subscriptions, category budgets, and demo sign-in use browser `localStorage`; there is no real authentication or per-user separation.
+- **Limitations:** local single-user JSON storage has no database transaction or safe concurrent-write guarantees and is not suitable for production financial data.
+
+The team still needs to complete and review the course worksheet and Team Contributions Table and confirm any instructor-specific Milestone 2 submission requirements. No claims are made here about those external deliverables.
