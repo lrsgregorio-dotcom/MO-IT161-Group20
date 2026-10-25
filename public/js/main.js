@@ -516,8 +516,30 @@ function renderTransactions() {
     deleteButton.type = "button";
     deleteButton.className = "delete-btn";
     deleteButton.textContent = "Delete";
-    deleteButton.disabled = true;
-    deleteButton.title = "Transaction deletion will be available in the next step";
+    deleteButton.addEventListener("click", async function () {
+      deleteButton.disabled = true;
+      setTransactionStatus("Deleting transaction...", false);
+
+      try {
+        const response = await fetch("/api/transactions/" + encodeURIComponent(item.id), {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || "The server could not delete the transaction.");
+        }
+
+        transactions = transactions.filter(function (transaction) {
+          return transaction.id !== item.id;
+        });
+        renderTransactions();
+        updateSummary();
+        setTransactionStatus("Transaction deleted.", false);
+      } catch (error) {
+        deleteButton.disabled = false;
+        setTransactionStatus("Could not delete transaction: " + error.message, true);
+      }
+    });
 
     actions.append(amount, deleteButton);
     li.append(info, actions);

@@ -56,6 +56,20 @@ app.post("/api/transactions", async function (req, res) {
   res.status(201).json(newTransaction);
 });
 
+app.delete("/api/transactions/:id", async function (req, res) {
+  const transactions = await transactionStore.readTransactions();
+  const remainingTransactions = transactions.filter(function (transaction) {
+    return transaction.id !== req.params.id;
+  });
+
+  if (remainingTransactions.length === transactions.length) {
+    return res.status(404).json({ error: "Transaction not found." });
+  }
+
+  await transactionStore.writeTransactions(remainingTransactions);
+  res.status(204).end();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use(function (error, req, res, next) {
