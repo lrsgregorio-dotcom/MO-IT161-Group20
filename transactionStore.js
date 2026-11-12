@@ -36,6 +36,7 @@ function isValidTransactionRecord(transaction) {
   );
 }
 
+// READ: Load and validate all transaction records from the JSON data file.
 async function readTransactions() {
   let fileContents;
 
@@ -61,6 +62,7 @@ async function readTransactions() {
   return transactions;
 }
 
+// WRITE: Validate and persist transaction records to the JSON data file.
 async function writeTransactions(transactions) {
   if (!Array.isArray(transactions) || transactions.some(function (transaction) {
     return !isValidTransactionRecord(transaction);

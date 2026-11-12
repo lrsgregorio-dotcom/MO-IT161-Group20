@@ -23,6 +23,7 @@ const authStatus = document.getElementById("authStatus");
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const appPages = document.querySelectorAll(".app-page");
 
+// NAVIGATION: Show the requested app view and mark its navigation link active.
 function showPage(pageId) {
   const pageExists = Array.from(appPages).some(function (page) {
     return page.id === pageId;
@@ -44,6 +45,7 @@ function showPage(pageId) {
   });
 }
 
+// NAVIGATION: Keep the visible app view in sync with the URL hash.
 function syncPageFromHash() {
   showPage(window.location.hash.slice(1) || "dashboard");
 }
@@ -55,6 +57,7 @@ function getUserStorageKey(userId, name) {
   return "budgetBuddyUser." + userId + "." + name;
 }
 
+// ACCOUNT DATA: Load this user's browser-stored subscriptions and budgets.
 function loadUserLocalData(user) {
   currentUser = user;
   const localDataNames = ["subscriptions", "categoryBudgets"];
@@ -82,6 +85,7 @@ function loadUserLocalData(user) {
   }
 }
 
+// ACCOUNT: Open the app after sign-in and load its feature data.
 function showApp(user) {
   loadUserLocalData(user);
   signedInUser.textContent = user.name;
@@ -251,14 +255,16 @@ function getTransactionImportKey() {
 }
 
 // ===================================================
-// SAVE TO LOCAL STORAGE
+// SUBSCRIPTION AND CATEGORY-BUDGET STORAGE
 // ===================================================
+// SUBSCRIPTIONS: Save the signed-in user's subscription list in localStorage.
 function saveSubscriptions() {
   if (currentUser) {
     localStorage.setItem(getUserStorageKey(currentUser.id, "subscriptions"), JSON.stringify(subscriptions));
   }
 }
 
+// CATEGORY BUDGETS: Save the signed-in user's budget list in localStorage.
 function saveCategoryBudgets() {
   if (currentUser) {
     localStorage.setItem(getUserStorageKey(currentUser.id, "categoryBudgets"), JSON.stringify(categoryBudgets));
@@ -270,6 +276,7 @@ function setTransactionStatus(message, isError) {
   transactionStatus.classList.toggle("is-error", Boolean(isError));
 }
 
+// READ: Request the signed-in user's transactions from the backend.
 async function getServerTransactions() {
   const response = await fetch("/api/transactions");
   const result = await response.json();
@@ -284,7 +291,9 @@ async function getServerTransactions() {
   return result;
 }
 
+// CREATE: Send a new transaction to the backend and return its saved record.
 async function postServerTransaction(transaction) {
+  // Send form data as JSON; the server responds with the saved record or an error.
   const response = await fetch("/api/transactions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -404,6 +413,7 @@ async function importBrowserTransactions(serverTransactions) {
   };
 }
 
+// READ: Load backend transactions, then render the list and dashboard totals.
 async function loadTransactions() {
   transactionsLoaded = false;
   transactionSubmitButton.disabled = true;
@@ -440,11 +450,12 @@ async function loadTransactions() {
 }
 
 // ===================================================
-// ADD A TRANSACTION
+// CREATE: Submit the Add Transaction form to the backend.
 // ===================================================
 transactionForm.addEventListener("submit", async function (event) {
   event.preventDefault(); // stop the page from reloading
 
+  // 1. Read the form fields and check them before sending the request.
   const type = document.getElementById("transactionType").value;
   const category = document.getElementById("transactionCategory").value.trim();
   const amount = parseFloat(document.getElementById("transactionAmount").value);
@@ -460,6 +471,7 @@ transactionForm.addEventListener("submit", async function (event) {
   setTransactionStatus("Saving transaction...", false);
 
   try {
+    // 2. Wait for the backend to validate, save, and return the new record.
     const savedTransaction = await postServerTransaction({
       type: type,
       category: category,
@@ -468,6 +480,7 @@ transactionForm.addEventListener("submit", async function (event) {
       note: note,
     });
 
+    // 7. Use the server's saved record, then refresh history and dashboard.
     transactions.push(savedTransaction);
     transactionForm.reset();
     renderTransactions();
@@ -481,22 +494,25 @@ transactionForm.addEventListener("submit", async function (event) {
 });
 
 // ===================================================
-// ADD A SUBSCRIPTION
+// SUBSCRIPTIONS: ADD A SUBSCRIPTION
 // ===================================================
 subscriptionForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
+  // 1. Read the subscription details entered in the form.
   const name = document.getElementById("subscriptionName").value.trim();
   const amount = parseFloat(document.getElementById("subscriptionAmount").value);
   const cycle = document.getElementById("subscriptionCycle").value;
   const renewalDate = document.getElementById("subscriptionRenewalDate").value;
   const reminderDays = Number(document.getElementById("subscriptionReminderDays").value);
 
+  // 2. Require a name, positive amount, and next renewal date.
   if (!name || !amount || amount <= 0 || !renewalDate) {
     alert("Please enter a subscription name, a valid amount, and the next renewal date.");
     return;
   }
 
+  // 3. Create a subscription record with an ID and reminder settings.
   const newSubscription = {
     id: Date.now(),
     name: name,
@@ -506,16 +522,23 @@ subscriptionForm.addEventListener("submit", function (event) {
     reminderDays: reminderDays,
   };
 
+  // 4. Add the record to the current user's subscription list.
   subscriptions.push(newSubscription);
+
+  // 5. Persist subscriptions in this user's browser localStorage.
   saveSubscriptions();
 
+  // 6. Clear the form and redraw the subscription and renewal lists.
   subscriptionForm.reset();
   renderSubscriptions();
   renderRenewalReminders();
+
+  // 7. Check reminders and refresh the dashboard's subscription total.
   checkRenewalNotifications();
   updateSummary();
 });
 
+// RENEWAL REMINDERS: Request browser permission and refresh reminder status.
 notificationButton.addEventListener("click", function () {
   if (!notificationsAvailable()) return;
 
@@ -525,6 +548,7 @@ notificationButton.addEventListener("click", function () {
   });
 });
 
+// CATEGORY BUDGETS: Add a monthly spending limit or update an existing one.
 categoryBudgetForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -554,20 +578,24 @@ categoryBudgetForm.addEventListener("submit", function (event) {
 });
 
 // ===================================================
-// FILTER DROPDOWN
+// TRANSACTION HISTORY: FILTER AND EXPORT
 // ===================================================
+// HISTORY FILTER: Show all transactions or only income/expenses.
 filterType.addEventListener("change", function () {
   renderTransactions();
 });
 
+// CSV EXPORT: Download the currently selected transaction history.
 exportTransactionsButton.addEventListener("click", exportTransactionsCsv);
 
+// HISTORY FILTER: Return transactions matching the selected type.
 function getFilteredTransactions() {
   return transactions.filter(function (item) {
     return filterType.value === "all" || item.type === filterType.value;
   });
 }
 
+// CSV EXPORT: Escape values so commas, quotes, and formula-like text are safe.
 function escapeCsvValue(value) {
   let text = String(value == null ? "" : value);
 
@@ -578,6 +606,7 @@ function escapeCsvValue(value) {
   return '"' + text.replace(/"/g, '""') + '"';
 }
 
+// CSV EXPORT: Download the currently filtered transaction history as a CSV.
 function exportTransactionsCsv() {
   const filteredTransactions = getFilteredTransactions();
   if (filteredTransactions.length === 0) return;
@@ -612,13 +641,14 @@ function exportTransactionsCsv() {
     URL.revokeObjectURL(downloadUrl);
   }, 1000);
 
-  exportStatus.textContent = "Exported " + filteredTransactions.length +
+  exportStatus.textContent = "Download started for " + filteredTransactions.length +
     (filteredTransactions.length === 1 ? " transaction." : " transactions.");
 }
 
 // ===================================================
-// RENDER TRANSACTIONS (based on selected filter)
+// TRANSACTION HISTORY: RENDER, EDIT, AND DELETE
 // ===================================================
+// HISTORY: Render the filtered transaction list and its Edit/Delete controls.
 function renderTransactions() {
   const filteredTransactions = getFilteredTransactions();
 
@@ -651,6 +681,7 @@ function renderTransactions() {
     deleteButton.type = "button";
     deleteButton.className = "delete-btn";
     deleteButton.textContent = "Delete";
+    // DELETE: Request removal before updating the local UI state.
     deleteButton.addEventListener("click", async function () {
       deleteButton.disabled = true;
       setTransactionStatus("Deleting transaction...", false);
@@ -737,6 +768,7 @@ function renderTransactions() {
     saveButton.textContent = "Save changes";
 
     editor.append(typeLabel, categoryLabel, amountLabel, dateLabel, noteLabel, saveButton);
+    // UPDATE: Submit edited fields and replace the item only after success.
     editor.addEventListener("submit", async function (event) {
       event.preventDefault();
       saveButton.disabled = true;
@@ -791,8 +823,9 @@ function renderTransactions() {
 }
 
 // ===================================================
-// RENDER SUBSCRIPTIONS
+// SUBSCRIPTIONS: RENDER, EDIT REMINDERS, AND DELETE
 // ===================================================
+// SUBSCRIPTIONS: Render each subscription and its reminder/edit/delete controls.
 function renderSubscriptions() {
   subscriptionList.replaceChildren();
 
@@ -879,6 +912,7 @@ function renderSubscriptions() {
     saveButton.textContent = "Save reminder";
 
     editor.append(dateField, leadField, saveButton);
+    // SUBSCRIPTIONS: Save an updated renewal date and reminder lead time.
     editor.addEventListener("submit", function (event) {
       event.preventDefault();
       sub.renewalDate = dateInput.value;
@@ -889,12 +923,14 @@ function renderSubscriptions() {
       checkRenewalNotifications();
     });
 
+    // SUBSCRIPTIONS: Open or close the renewal reminder editor.
     editButton.addEventListener("click", function () {
       editor.hidden = !editor.hidden;
       editButton.setAttribute("aria-expanded", String(!editor.hidden));
       if (!editor.hidden) dateInput.focus();
     });
 
+    // SUBSCRIPTIONS: Remove this subscription from the saved list.
     deleteButton.addEventListener("click", function () {
       subscriptions = subscriptions.filter(function (entry) {
         return entry.id !== sub.id;
@@ -927,6 +963,7 @@ function daysUntilRenewal(dateString) {
   return Math.round((renewalDate - today) / 86400000);
 }
 
+// RENEWAL REMINDERS: List upcoming subscription renewals in date order.
 function renderRenewalReminders() {
   const datedSubscriptions = subscriptions
     .filter(function (sub) {
@@ -978,10 +1015,12 @@ function renderRenewalReminders() {
   });
 }
 
+// RENEWAL REMINDERS: Check whether this browser supports notifications.
 function notificationsAvailable() {
   return window.isSecureContext && "Notification" in window;
 }
 
+// RENEWAL REMINDERS: Update the permission button and its status message.
 function updateNotificationControl() {
   if (!notificationsAvailable()) {
     notificationButton.disabled = true;
@@ -1005,6 +1044,7 @@ function updateNotificationControl() {
   }
 }
 
+// RENEWAL REMINDERS: Notify about renewals within each subscription's lead time.
 function checkRenewalNotifications() {
   if (appShell.hidden || !notificationsAvailable() || window.Notification.permission !== "granted") return;
 
@@ -1047,8 +1087,9 @@ document.addEventListener("visibilitychange", function () {
 window.setInterval(checkRenewalNotifications, 60000);
 
 // ===================================================
-// UPDATE DASHBOARD TOTALS + BUDGET HEALTH INDICATOR
+// DASHBOARD: TOTALS, CHARTS, CATEGORY BUDGETS, AND HEALTH
 // ===================================================
+// DASHBOARD: Recalculate totals and refresh all transaction-based summaries.
 function updateSummary() {
   let totalIncome = 0;
   let totalExpenses = 0;
@@ -1083,6 +1124,7 @@ function updateSummary() {
   renderCategoryBudgets();
 }
 
+// SPENDING CHART: Group expense totals by category and display them as bars.
 function renderSpendingChart() {
   const categoryTotals = new Map();
 
@@ -1145,6 +1187,7 @@ function renderSpendingChart() {
   });
 }
 
+// CATEGORY BUDGETS: Show this month's spending against each saved limit.
 function renderCategoryBudgets() {
   const today = new Date();
   const year = today.getFullYear();
@@ -1194,6 +1237,7 @@ function renderCategoryBudgets() {
     removeButton.className = "budget-remove";
     removeButton.textContent = "Remove";
     removeButton.setAttribute("aria-label", "Remove " + budget.category + " budget");
+    // CATEGORY BUDGETS: Remove this category's monthly spending limit.
     removeButton.addEventListener("click", function () {
       categoryBudgets = categoryBudgets.filter(function (entry) {
         return entry.category.toLocaleLowerCase() !== categoryKey;
@@ -1229,6 +1273,7 @@ function renderCategoryBudgets() {
 }
 
 // ---- Decide the budget health color: Good / Warning / Over Budget ----
+// BUDGET HEALTH: Set the dashboard badge based on income and remaining balance.
 function updateHealthBadge(totalIncome, balance) {
   healthBadge.classList.remove("badge-good", "badge-warning", "badge-over");
 

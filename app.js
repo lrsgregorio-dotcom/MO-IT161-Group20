@@ -17,6 +17,7 @@ app.use("/api", function (req, res, next) {
   next();
 });
 
+// Build the saved record using the server-generated ID and signed-in user's ID.
 function createTransactionRecord(transaction, id, userId) {
   return {
     id: id,
@@ -163,6 +164,7 @@ app.post("/api/auth/logout", function (req, res) {
 
 app.use("/api/transactions", requireAuthentication);
 
+// READ: Return the signed-in user's saved transactions.
 app.get("/api/transactions", async function (req, res) {
   const transactions = await transactionStore.readTransactions();
   res.json(transactions.filter(function (transaction) {
@@ -170,21 +172,27 @@ app.get("/api/transactions", async function (req, res) {
   }));
 });
 
+// CREATE: Validate and save a new transaction for the signed-in user.
 app.post("/api/transactions", async function (req, res) {
+  // 3. Reject invalid data on the server; frontend checks alone are not trusted.
   const transaction = req.body;
   if (!isValidTransaction(transaction)) {
     return res.status(400).json({ error: "Invalid transaction. Check the submitted fields." });
   }
 
+  // 4. Read existing records so the new transaction does not replace the list.
   const transactions = await transactionStore.readTransactions();
-  const newTransaction = createTransactionRecord(transaction, randomUUID(), req.userId);
 
+  // 5. Add server-owned identity fields, then append and persist the record.
+  const newTransaction = createTransactionRecord(transaction, randomUUID(), req.userId);
   transactions.push(newTransaction);
   await transactionStore.writeTransactions(transactions);
 
+  // 6. Return the saved record; the browser updates only after this response.
   res.status(201).json(newTransaction);
 });
 
+// UPDATE: Validate and save changes to one of the signed-in user's transactions.
 app.put("/api/transactions/:id", async function (req, res) {
   const transaction = req.body;
   if (!isValidTransaction(transaction)) {
@@ -211,6 +219,7 @@ app.put("/api/transactions/:id", async function (req, res) {
   res.json(updatedTransaction);
 });
 
+// DELETE: Remove one of the signed-in user's transactions.
 app.delete("/api/transactions/:id", async function (req, res) {
   const transactions = await transactionStore.readTransactions();
   const remainingTransactions = transactions.filter(function (transaction) {
